@@ -1,22 +1,38 @@
-import midas/request.{Request, segments}
+import midas/request.{Request, segments, host, port}
 import gleam/expect
 
 pub fn parse_segments_test() {
-  let request = Request(path: "/")
+  let request = Request(authority: "e.test", path: "/")
   expect.equal(segments(request), [])
 
-  let request = Request(path: "/foo/bar")
+  let request = Request(authority: "e.test", path: "/foo/bar")
   expect.equal(segments(request), ["foo", "bar"])
 
-  let request = Request(path: "////")
+  let request = Request(authority: "e.test", path: "////")
   expect.equal(segments(request), [])
 
-  let request = Request(path: "/foo//bar")
+  let request = Request(authority: "e.test", path: "/foo//bar")
   expect.equal(segments(request), ["foo", "bar"])
 
-  let request = Request(path: "/foo//bar?baz=5")
+  let request = Request(authority: "e.test", path: "/foo//bar?baz=5")
   expect.equal(segments(request), ["foo", "bar"])
-  
-  let request = Request(path: "/?baz=5")
+
+  let request = Request(authority: "e.test", path: "/?baz=5")
   expect.equal(segments(request), [])
+}
+
+pub fn parse_host_test() {
+  let request = Request(authority: "e.test", path: "/")
+  expect.equal(host(request), "e.test")
+
+  let request = Request(authority: "e.test:8080", path: "/")
+  expect.equal(host(request), "e.test")
+}
+
+pub fn parse_port_test() {
+  let request = Request(authority: "e.test", path: "/")
+  expect.equal(port(request), 80)
+
+  let request = Request(authority: "e.test:8080", path: "/")
+  expect.equal(port(request), 8080)
 }
