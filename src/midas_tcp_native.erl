@@ -2,7 +2,7 @@
 -export([listen/1, send/2, pull/2]).
 
 listen(Port) ->
-  TcpOptions = [{mode, binary}, {packet, raw}, {active, false}],
+  TcpOptions = [{mode, binary}, {packet, raw}, {active, false}, {reuseaddr, true}],
   gen_tcp:listen(Port, TcpOptions).
 
 send(Socket, String) ->

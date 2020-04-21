@@ -12,8 +12,8 @@ pub type Request {
     // TODO method Enum
     Request(
         authority: String,
+        path: String,
         headers: h_utils.Headers,
-        path: String
     )
 }
 
