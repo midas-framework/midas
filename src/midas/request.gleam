@@ -1,19 +1,18 @@
 import midas_utils
+import midas/headers as h_utils
 import gleam/result
 import gleam/result.{Option}
 import gleam/list
 import gleam/int
 
 external fn display(a) -> Nil = "erlang" "display"
-pub type Headers =
-  List(tuple(String, String))
 
 pub type Request {
     // scheme is part of the connection level
     // TODO method Enum
     Request(
         authority: String,
-        headers: Headers,
+        headers: h_utils.Headers,
         path: String
     )
 }
@@ -92,19 +91,12 @@ pub fn query(request: Request) -> List(tuple(String, String)) {
 
 pub fn set_header(request: Request, key: String, value: String) -> Request {
     let Request(authority: authority, headers: headers, path: path) = request
-    let headers = [tuple(key, value) | headers]
+    let headers = h_utils.append(headers, key, value)
     Request(authority: authority, headers: headers, path: path)
 }
 
-fn match_key(pair, search) {
-    let tuple(key, _value) = pair
-    key == search
-}
 
-pub fn get_header(request: Request, key: String) -> Option(tuple(String, String)) {
+pub fn get_header(request: Request, key: String) -> Option(h_utils.Header) {
     let Request(authority: _, headers: headers, path: _) = request
-    case list.filter(headers, match_key(_, key)) {
-        [] -> Error(Nil)
-        [pair] -> Ok(pair)
-    }
+    h_utils.find(headers, key)
 }
