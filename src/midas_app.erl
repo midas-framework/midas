@@ -22,6 +22,6 @@ init([]) ->
                  intensity => 0,
                  period => 1},
     ChildSpecs = [
-      #{id => service, start => {midas_server, start_link, []}}
+      #{id => service, start => {midas@server, start_link, []}}
     ],
     {ok, {SupFlags, ChildSpecs}}.
