@@ -5,8 +5,7 @@ start_link(Task) ->
   spawn_link(fun () ->
       Task(fun () ->
           do_receive()
-      end),
-      io:fwrite("Done Processing~n", [])
+      end)
   end).
 
 

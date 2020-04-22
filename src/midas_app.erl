@@ -6,7 +6,8 @@
 -export([start/2, stop/1, init/1]).
 
 start(_StartType, _StartArgs) ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    % supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    midas_supervisor:start_link(fun (Request) -> my_app@web:handle_request(Request) end, 8080).
 
 stop(_State) ->
     ok.

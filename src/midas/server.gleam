@@ -38,9 +38,9 @@ fn run(listen_socket, handler) {
     Nil
 }
 
-pub fn start_link(listen_socket) {
+pub fn start_link(listen_socket, handler) {
     let pid = process.start_link(fn(_receive) {
-        run(listen_socket, web.handle_request)
+        run(listen_socket, handler)
     })
     Ok(pid)
 }
