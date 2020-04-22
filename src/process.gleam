@@ -1,26 +1,24 @@
 import gleam/result
 
-// pub fn start_worker(init: fn() -> s, loop: fn(s) -> s) {
-//     loop(init())
-// }
-
-// fn example() {
-//     start_worker(fn() { "HEllo"}, fn(x: Int) { x + 1})
-// }
-
 pub type Process(m) {
     Pid
 }
 
-pub type Message(m) {
-    Down
-    Inner(m)
+// NOTE references can be picked up without any reference to what type of process they correspond to, e.g. DOWN messages
+pub type Monitor() {
+    Reference
 }
 
-pub external fn start(init: fn(fn() -> Message(m)) -> Nil) -> Result(Process(m), Nil)
-  = "process_native" "start"
-
-
-pub fn send(pid: Process(m), message: m) -> Result(Nil, Nil) {
-    Ok(Nil)
+pub type Protocol(m) {
+    Down(Monitor)
+    Message(m)
 }
+
+pub external fn start_link(fn(fn() -> Protocol(m)) -> Nil) -> Process(m)
+  = "process_native" "start_link"
+
+pub external fn monitor(Process(m)) -> Monitor()
+    = "process_native" "monitor"
+
+pub external fn send(pid: Process(m), message: m) -> Result(Nil, Nil)
+    = "erlang" "send"

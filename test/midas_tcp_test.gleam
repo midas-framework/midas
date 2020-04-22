@@ -1,7 +1,6 @@
 import midas_tcp
 import gleam/expect
 
-external fn display(a) -> Nil = "erlang" "display"
 // 
 // pub fn parse_segments_test() {
 //     let Ok(listen_socket) = midas_tcp.listen(8080)

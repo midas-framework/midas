@@ -42,7 +42,7 @@ pub fn parse_request_line(line: String) {
     let tuple(method_string, Ok(rest)) = midas_utils.split_on(line, " ")
     let Ok(method) = parse_method(method_string)
 
-    let tuple(path, rest) = midas_utils.split_on(rest, " ")
+    let tuple(path, Ok("HTTP/1.1\r\n")) = midas_utils.split_on(rest, " ")
     // TODO check starts with "/"
     Ok(tuple(method, path))
 }

@@ -18,10 +18,12 @@ stop(_State) ->
 %%                  type => worker(),        % optional
 %%                  modules => modules()}   % optional
 init([]) ->
+    {ok, ListenSocket} = midas_tcp_native:listen(8080),
     SupFlags = #{strategy => one_for_all,
-                 intensity => 0,
+                 % Why 0 in template
+                 intensity => 10,
                  period => 1},
     ChildSpecs = [
-      #{id => service, start => {midas@server, start_link, []}}
+      #{id => service, start => {midas@server, start_link, [ListenSocket]}}
     ],
     {ok, {SupFlags, ChildSpecs}}.

@@ -5,15 +5,13 @@ import gleam/result.{Option}
 import gleam/list
 import gleam/int
 
-external fn display(a) -> Nil = "erlang" "display"
-
 import gleam/string
 
 pub type Request {
     // scheme is part of the connection level
     // TODO method Enum
     Request(
-        
+
         path: String,
         authority: String,
         headers: h_utils.Headers,

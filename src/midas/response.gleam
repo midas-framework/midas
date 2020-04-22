@@ -31,6 +31,7 @@ pub fn concat(strings: List(String)) -> String {
 }
 
 pub fn to_string(response: Response) -> String {
-    let Response(status: status, headers: headers, body: body) = response
+    let Response(status: _status, headers: _headers, body: body) = response
+    // TODO status response
     concat(["HTTP/1.1 ", "200", " Unknown\r\n\r\n", body])
 }

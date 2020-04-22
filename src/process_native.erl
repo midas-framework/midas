@@ -1,19 +1,22 @@
 -module(process_native).
--export([start/1]).
+-export([start_link/1,  do_receive/0, monitor/1]).
 
-start(Task) ->
-  Pid = spawn(fun () ->
+start_link(Task) ->
+  spawn_link(fun () ->
       Task(fun () ->
-          5
-      end)
-  end),
-  {ok, Pid}.
+          do_receive()
+      end),
+      io:fwrite("Done Processing~n", [])
+  end).
 
 
 do_receive() ->
     receive
-        {'DOWN', Ref, process, Pid2, Reason} ->
-            down;
+        {'DOWN', Ref, process, _Pid2, _Reason} ->
+            {down, Ref};
         Message ->
-            {inner, Message}
+            {message, Message}
     end.
+
+monitor(Pid) ->
+  erlang:monitor(process, Pid).
