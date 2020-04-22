@@ -1,6 +1,6 @@
-# midas
+# Midas
 
-A Gleam program
+A Web Framework for Gleam applications
 
 ## Quick start
 
