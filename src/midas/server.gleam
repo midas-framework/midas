@@ -26,7 +26,13 @@ fn read_request(socket) {
     let Ok(authority) = h_utils.find(headers, "host")
     let content_length = result.unwrap(h_utils.find(headers, "content-length"), or: "0")
     let Ok(content_length) = int.parse(content_length)
-    let Ok(body) = midas_tcp.read_blob(socket, content_length, 5000)
+    let body = case content_length {
+        0 -> ""
+        _ -> {
+            let Ok(body) = midas_tcp.read_blob(socket, content_length, 5000)
+            body
+        }
+    }
     Ok(Request(method: method, authority: authority, headers: headers, path: path, body: body))
 }
 
