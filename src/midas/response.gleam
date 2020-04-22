@@ -1,10 +1,9 @@
 import gleam/iodata
+import gleam/int
 import gleam/result.{Option}
 import midas/headers as h_utils
 
 pub type Response {
-    // scheme is part of the connection level
-    // TODO method Enum
     Response(
         status: Int,
         headers: h_utils.Headers,
@@ -31,7 +30,14 @@ pub fn concat(strings: List(String)) -> String {
 }
 
 pub fn to_string(response: Response) -> String {
-    let Response(status: _status, headers: _headers, body: body) = response
-    // TODO status response
-    concat(["HTTP/1.1 ", "200", " Unknown\r\n\r\n", body])
+    let Response(status: status, headers: _headers, body: body) = response
+    let reason_phrase = case status {
+        200 -> "OK"
+        404 -> "Not Found"
+        _ -> "Unknown"
+    }
+
+    // TODO needs to add content length Or does it!, use the set_body function
+
+    concat(["HTTP/1.1 ", int.to_string(status), " ", reason_phrase, "\r\n\r\n", body])
 }
