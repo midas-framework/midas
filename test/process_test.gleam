@@ -9,6 +9,7 @@ pub external fn self() -> process.Process(m)
     = "erlang" "self"
 
 // How to reference types in other files
+// pub type MyProtocol = Protocol(String)
 // pub type MyProtocol = process.Protocol(String)
 
 pub fn echo_test() {

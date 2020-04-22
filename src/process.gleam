@@ -13,6 +13,13 @@ pub type Protocol(m) {
     Down(Monitor)
     Message(m)
 }
+// 
+// pub type MyProtocol = Protocol(String)
+//
+// fn accept(x: MyProtocol) {
+//     let Message(m) = x
+//     m + 1
+// }
 
 pub external fn start_link(fn(fn() -> Protocol(m)) -> Nil) -> Process(m)
   = "process_native" "start_link"
