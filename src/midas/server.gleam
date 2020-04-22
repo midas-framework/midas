@@ -8,8 +8,6 @@ import midas/request.{Request}
 // import midas/response
 import midas/response.{Response, to_string}
 
-import my_app/web
-
 fn read_headers(socket, headers) {
     let Ok(line) = midas_tcp.pull(socket, 5000)
     case http.parse_header_line(line) {

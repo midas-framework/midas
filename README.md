@@ -2,7 +2,6 @@
 
 A Gleam program
 
-
 ## Quick start
 
 ```sh
@@ -15,7 +14,6 @@ rebar3 eunit
 # Run the Erlang REPL
 rebar3 shell
 ```
-
 
 ## Installation
 

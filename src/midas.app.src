@@ -2,7 +2,6 @@
  [{description, "A Gleam program"},
   {vsn, "1.0.0"},
   {registered, []},
-  {mod, {midas_app, []}},
   {applications,
    [kernel,
     stdlib
