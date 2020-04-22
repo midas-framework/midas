@@ -12,9 +12,9 @@ send(Socket, String) ->
   end.
 
 read_line(Socket, Timeout) ->
-  inet:setops(Socket, [{packet, line}]),
+  inet:setopts(Socket, [{packet, line}]),
   gen_tcp:recv(Socket, 0, Timeout).
 
 read_blob(Socket, Length, Timeout) ->
-  inet:setops(Socket, [{packet, raw}]),
+  inet:setopts(Socket, [{packet, raw}]),
   gen_tcp:recv(Socket, Length, Timeout).
