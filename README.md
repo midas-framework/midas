@@ -19,7 +19,7 @@ Add `midas` to your list of dependencies in `rebar.config`
 ### Define a handler function
 
 ```rust
-// src/my_app/web.geam
+// src/my_app/web.gleam
 
 import midas
 import midas/request.{Request}
