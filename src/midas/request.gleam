@@ -7,12 +7,15 @@ import gleam/int
 
 external fn display(a) -> Nil = "erlang" "display"
 
+import gleam/string
+
 pub type Request {
     // scheme is part of the connection level
     // TODO method Enum
     Request(
-        authority: String,
+        
         path: String,
+        authority: String,
         headers: h_utils.Headers,
     )
 }
