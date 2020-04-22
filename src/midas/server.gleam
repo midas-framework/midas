@@ -39,8 +39,8 @@ fn run(listen_socket, handler) {
 }
 
 pub fn start_link(listen_socket) {
-    midas_utils.format("start server")
-    process.start_link(fn(_receive) {
+    let pid = process.start_link(fn(_receive) {
         run(listen_socket, web.handle_request)
     })
+    Ok(pid)
 }

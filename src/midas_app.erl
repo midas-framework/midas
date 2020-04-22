@@ -23,7 +23,6 @@ init([]) ->
                  % Why 0 in template
                  intensity => 10,
                  period => 1},
-    ChildSpecs = [
-      #{id => service, start => {midas@server, start_link, [ListenSocket]}}
-    ],
+
+    ChildSpecs = [#{id => I, start => {midas@server, start_link, [ListenSocket]}} || I <- lists:seq(1, 100)],
     {ok, {SupFlags, ChildSpecs}}.
