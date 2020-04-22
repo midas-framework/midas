@@ -1,5 +1,5 @@
 -module(midas_tcp_native).
--export([listen/1, send/2, pull/2]).
+-export([listen/1, send/2, read_line/2, read_blob/3]).
 
 listen(Port) ->
   TcpOptions = [{mode, binary}, {packet, line}, {active, false}, {reuseaddr, true}],
@@ -11,5 +11,10 @@ send(Socket, String) ->
     {error, reason} -> {error, reason}
   end.
 
-pull(Socket, Timeout) ->
+read_line(Socket, Timeout) ->
+  inet:setops(Socket, [{packet, line}]),
   gen_tcp:recv(Socket, 0, Timeout).
+
+read_blob(Socket, Length, Timeout) ->
+  inet:setops(Socket, [{packet, raw}]),
+  gen_tcp:recv(Socket, Length, Timeout).

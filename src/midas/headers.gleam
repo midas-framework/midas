@@ -19,6 +19,6 @@ fn match_key(pair, search) {
 pub fn find(headers, key) {
     case list.filter(headers, match_key(_, key)) {
         [] -> Error(Nil)
-        [pair] -> Ok(pair)
+        [tuple(_key, value)] -> Ok(value)
     }
 }

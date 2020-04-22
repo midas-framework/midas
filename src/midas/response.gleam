@@ -19,7 +19,7 @@ pub fn set_header(response: Response, key: String, value: String) -> Response {
 }
 
 
-pub fn get_header(response: Response, key: String) -> Option(h_utils.Header) {
+pub fn get_header(response: Response, key: String) -> Option(String) {
     let Response(status: _, headers: headers, body: _) = response
     h_utils.find(headers, key)
 }

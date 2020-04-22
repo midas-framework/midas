@@ -15,5 +15,8 @@ pub external fn accept(ListenSocket) -> Result(Socket, Nil)
 pub external fn send(Socket, String) -> Result(Nil, Nil)
     = "midas_tcp_native" "send"
 
-pub external fn pull(Socket, Int) -> Result(String, Nil)
-    = "midas_tcp_native" "pull"
+pub external fn read_line(Socket, Int) -> Result(String, Nil)
+    = "midas_tcp_native" "read_line"
+
+pub external fn read_blob(Socket, Int, Int) -> Result(String, Nil)
+    = "midas_tcp_native" "read_blob"
