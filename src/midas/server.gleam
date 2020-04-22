@@ -18,13 +18,12 @@ fn read_headers(socket, headers) {
 
 fn read_request(socket) {
     let Ok(line) = midas_tcp.pull(socket, 5000)
-    let Ok(tuple(_method, path)) = http.parse_request_line(line)
-    // TODO method
+    let Ok(tuple(method, path)) = http.parse_request_line(line)
     let Ok([tuple("host", authority) | headers]) = read_headers(socket, [])
     // change mode to read the body
     // pop host
     // read content length
-    Ok(Request(authority: authority, headers: headers, path: path))
+    Ok(Request(method: method, authority: authority, headers: headers, path: path))
 }
 
 

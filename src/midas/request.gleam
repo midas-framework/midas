@@ -1,5 +1,6 @@
 import midas_utils
 import midas/headers as h_utils
+import midas/http
 import gleam/result
 import gleam/result.{Option}
 import gleam/list
@@ -9,9 +10,8 @@ import gleam/string
 
 pub type Request {
     // scheme is part of the connection level
-    // TODO method Enum
     Request(
-
+        method: http.Method,
         path: String,
         authority: String,
         headers: h_utils.Headers,
@@ -19,13 +19,13 @@ pub type Request {
 }
 
 pub fn host(request: Request) -> String {
-  let Request(authority: authority, headers: _, path: _) = request
+  let Request(method: _, authority: authority, headers: _, path: _) = request
   let tuple(host, _port) = midas_utils.split_on(authority, ":")
   host
 }
 
 pub fn port(request: Request) -> Int {
-  let Request(authority: authority, headers: _, path: _) = request
+  let Request(method: _, authority: authority, headers: _, path: _) = request
   let tuple(_host, port_string) = midas_utils.split_on(authority, ":")
 
   case port_string {
@@ -59,7 +59,7 @@ fn split_segments(path) {
 }
 
 pub fn segments(request: Request) -> List(String) {
-  let Request(authority: _, headers: _, path: raw_path) = request
+  let Request(method: _, authority: _, headers: _, path: raw_path) = request
   let tuple(path, _query) = midas_utils.split_on(raw_path, "?")
   split_segments(path)
 }
@@ -82,7 +82,7 @@ fn do_split_query_string(query_string, accumulator) {
 }
 
 pub fn query(request: Request) -> List(tuple(String, String)) {
-  let Request(authority: _, headers: _, path: raw_path) = request
+  let Request(method: _, authority: _, headers: _, path: raw_path) = request
   let tuple(_path, query_string) = midas_utils.split_on(raw_path, "?")
   case query_string {
     Ok(query_string) -> do_split_query_string(query_string, [])
@@ -91,13 +91,13 @@ pub fn query(request: Request) -> List(tuple(String, String)) {
 }
 
 pub fn set_header(request: Request, key: String, value: String) -> Request {
-    let Request(authority: authority, headers: headers, path: path) = request
+    let Request(method: method, authority: authority, headers: headers, path: path) = request
     let headers = h_utils.append(headers, key, value)
-    Request(authority: authority, headers: headers, path: path)
+    Request(method: method, authority: authority, headers: headers, path: path)
 }
 
 
 pub fn get_header(request: Request, key: String) -> Option(h_utils.Header) {
-    let Request(authority: _, headers: headers, path: _) = request
+    let Request(method: _, authority: _, headers: headers, path: _) = request
     h_utils.find(headers, key)
 }
