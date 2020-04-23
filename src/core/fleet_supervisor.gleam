@@ -55,12 +55,6 @@ pub fn start_child(supervisor: process.Process(M(c))) -> process.Process(c) {
     let reference = process.monitor(supervisor)
     let Nil = process.send(supervisor, StartChild(reference, get_caller()))
     // Need error because supervisor could have died
-    // receive can accept a call
-    // TODO right call fn
-    // case receive() {
-    //     process.Message(pid) -> pid
-    //
-    // }
     let Ok(pid) = process.receive_reply(process.CallRef(reference))
     pid
     // TODO link between call and reply. This code works regardless of the type of the supervisor
