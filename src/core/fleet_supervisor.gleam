@@ -4,6 +4,8 @@ import core/process
 import core/supervisor
 import midas_utils
 
+// // Clone Copy, Replica, Homogenious replica
+
 pub type M(c) {
     // The return is a process that accepts messages about new processes that accept messages of the child
     StartChild(core.Ref, process.Process(tuple(core.Ref, process.Process(c))))
