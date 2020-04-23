@@ -1,5 +1,9 @@
 import gleam/result
 
+// Links for pmap and nothing else
+// One for all, can you just restart the supervisor
+// Is the a single child supervisor that makes sn
+
 pub type Process(m) {
     Pid
 }
@@ -9,11 +13,12 @@ pub type Monitor() {
     Reference
 }
 
+
 pub type Protocol(m) {
     Down(Monitor)
     Message(m)
 }
-// 
+//
 // pub type MyProtocol = Protocol(String)
 //
 // fn accept(x: MyProtocol) {
