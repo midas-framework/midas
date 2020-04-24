@@ -27,15 +27,11 @@ pub fn call_timeout_for_slow_process_test() {
     expect.equal(reply, Error(process.Timeout))
     // TODO this shouldn't be here
     // let task.Down() = unsafe_receive()
-    Nil
 }
 
-// pub fn call_error_for_down_process_test() {
-//     let pid = task.spawn_link(fn(_) { Nil})
-//     let reply = process.call(pid, Ping(_, 500), Infinity)
-//
-//     expect.equal(reply, Error(process.Down))
-//     // TODO this shouldn't be here
-//     // let task.Down() = unsafe_receive()
-//     Nil
-// }
+pub fn call_error_for_down_process_test() {
+    let pid = task.spawn_link(fn(_) { Nil})
+    let reply = process.call(pid, Ping(_, 500), Infinity)
+
+    expect.equal(reply, Error(process.Down))
+}

@@ -36,7 +36,7 @@ external fn self() -> Pid(a)
 // Can check pid is self
 // Need error because supervisor could have died
 // needs to be separate receive fn because we want to ignore exitsand motiors from other pids
-pub external fn receive_reply(Caller(r)) -> Result(r, CallError)
+pub external fn receive_reply(Caller(r), core.Wait) -> Result(r, CallError)
     = "core_process_native" "receive_reply"
 
 pub fn send(pid, message) -> Nil {
@@ -48,7 +48,7 @@ pub fn call(pid: Pid(m), message_fn: fn(Caller(r)) -> m, wait: core.Wait) -> Res
     let reference = monitor(pid)
     let from = From(reference, self())
     let Nil = send(pid, message_fn(from))
-    receive_reply(from)
+    receive_reply(from, wait)
 }
 
 pub fn reply(from: Caller(r), message: r) {
