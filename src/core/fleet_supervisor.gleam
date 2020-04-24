@@ -1,39 +1,52 @@
 import gleam/result
+import gleam/dynamic
 import core/core
 import core/process
 import core/supervisor
 import midas_utils
 
-// // Clone Copy, Replica, Homogenious replica
+// Other Possible name: Clone, Copy, Replica, Homogenious
 
-pub type M(c) {
-    // The return is a process that accepts messages about new processes that accept messages of the child
-    StartChild(core.Ref, process.Pid(tuple(core.Ref, process.Pid(c))))
+pub type Caller(r) {
+    From(core.Ref, process.Pid(tuple(core.Ref, r)))
 }
-// // Children is a list of child pids
+
+pub type Call(m, r) {
+    Ask(Caller(r), m)
+}
+
+pub type Protocol(c) {
+    // The return is a process that accepts messages about new processes that accept messages of the child
+    // StartChild(core.Ref, process.Pid(tuple(core.Ref, process.Pid(c))))
+    StartChild(Caller(process.Pid(c)))
+}
+
+fn reply(from: Caller(r), message: r) {
+    let From(reference, pid) = from
+    process.send(pid, tuple(reference, message))
+}
+
+// Children will be a list of child pids
 fn loop(receive, children, task_fn) {
     let message = receive()
-//     midas_utils.display("--------------------")
-//     midas_utils.display(message)
     case message {
-        // Needs to handle exit of parent
+        // TODO Needs to handle exit of parent properly
         supervisor.Exit -> {
             midas_utils.display("EXIT")
             let child = task_fn()
             loop(receive, children, task_fn)
         }
-//         // Need to make temporary mailbox
-//         // resolve fn for promise
-        supervisor.Message(StartChild(reference, caller)) -> {
+        supervisor.Message(StartChild(from)) -> {
             midas_utils.display("supervisor")
             let child = task_fn()
-            process.send(caller, tuple(reference, child))
+            reply(from, child)
             loop(receive, children, task_fn)
         }
+        // Can monitor only be callable if self is a receive that accepts DOWNS?
+        // This allows for a general Call Fn
+        // Message(Call(from, StartChild)) ->
         unexpected -> {
-//             midas_utils.display(unexpected)
             loop(receive, children, task_fn)
-//
         }
     }
 }
@@ -42,28 +55,35 @@ fn init(receive, task_fn) {
     let children = []
     loop(receive, children, task_fn)
 }
-// // function/runner/main/task
-// // task makes sense because main task is a thing
+// other names for child, function/runner/main/task. I think child refers more to pid, subroutine, run work?
 
-pub fn spawn_link(child_fn) -> process.Pid(M(c)) {
+pub fn spawn_link(child_fn) -> process.Pid(Protocol(c)) {
     supervisor.spawn_link(init(_, child_fn))
 }
 
-// ref to a process that accepts a process
-// TODO remove
-external fn get_caller() -> process.Pid(tuple(core.Ref, process.Pid(c))) = "erlang" "self"
+external fn self() -> process.Pid(a) = "erlang" "self"
 
-pub fn start_child(supervisor: process.Pid(M(c))) -> process.Pid(c) {
-    let reference = process.monitor(supervisor)
-    let Nil = process.send(supervisor, StartChild(reference, get_caller()))
-    // Need error because supervisor could have died
-    let Ok(pid) = process.receive_reply(process.CallRef(reference))
-    pid
-    // TODO link between call and reply. This code works regardless of the type of the supervisor
-    // process.send(pid, "")
-    // process.Pid
+// Can check pid is self
+// Need error because supervisor could have died
+// needs to be separate receive fn because we want to ignore exitsand motiors from other pids
+pub external fn receive_reply(Caller(r)) -> Result(r, Nil)
+    = "core_process_native" "receive_reply"
+
+
+pub fn call(pid, message_fn) {
+    let reference = process.monitor(pid)
+    let from = From(reference, self())
+    let Nil = process.send(pid, message_fn(from))
+    receive_reply(from)
 }
 
+pub fn start_child(supervisor: process.Pid(Protocol(c))) -> process.Pid(c) {
+    let Ok(pid) = call(supervisor, StartChild(_from))
+    pid
+
+}
+
+// From could include fn for promise that resolves to answer, probably more complicated to pass around anonymous fn
 
 import core/task
 fn debug() {

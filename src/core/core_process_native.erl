@@ -4,7 +4,7 @@
 monitor(Pid) ->
   erlang:monitor(process, Pid).
 
-receive_reply(Ref) ->
+receive_reply({from, Ref, _Pid}) ->
   receive
     {Ref, Message} ->
       {ok, Message}
