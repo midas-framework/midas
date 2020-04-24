@@ -9,4 +9,6 @@ receive_reply({from, Ref, _Pid}) ->
     {Ref, Message} ->
       {ok, Message}
       % TODO handle Down or Exir
+  after 100 ->
+      {error, timeout}
   end.

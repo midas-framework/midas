@@ -1,6 +1,7 @@
 import gleam/result
 import gleam/dynamic
 import core/core
+import core/core.{Milliseconds}
 import core/process
 import core/supervisor
 import midas_utils
@@ -21,6 +22,7 @@ fn loop(receive, children, task_fn) {
         supervisor.Exit(_) -> {
             midas_utils.display("EXIT")
             let child = task_fn()
+            let children = [child | children]
             loop(receive, children, task_fn)
         }
         supervisor.Message(m) -> {
@@ -35,9 +37,9 @@ fn loop(receive, children, task_fn) {
         // Can monitor only be callable if self is a receive that accepts DOWNS?
         // This allows for a general Call Fn
         // Message(Call(from, StartChild)) ->
-        unexpected -> {
-            loop(receive, children, task_fn)
-        }
+        // unexpected -> {
+        //     loop(receive, children, task_fn)
+        // }
     }
 }
 //
@@ -53,7 +55,8 @@ pub fn spawn_link(child_fn) -> process.Pid(Protocol(c)) {
 
 pub fn start_child(supervisor: process.Pid(Protocol(c))) -> process.Pid(c) {
     midas_utils.display("pool")
-    let Ok(pid) = process.call(supervisor, StartChild(_from))
+    // I suppose would be easier to add empty list to end
+    let Ok(pid) = process.call(supervisor, StartChild(_from), Milliseconds(5000))
     pid
 
 }

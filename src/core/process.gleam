@@ -44,7 +44,7 @@ pub fn send(pid, message) -> Nil {
     Nil
 }
 
-pub fn call(pid: Pid(m), message_fn: fn(Caller(r)) -> m) -> Result(r, CallError) {
+pub fn call(pid: Pid(m), message_fn: fn(Caller(r)) -> m, wait: core.Wait) -> Result(r, CallError) {
     let reference = monitor(pid)
     let from = From(reference, self())
     let Nil = send(pid, message_fn(from))

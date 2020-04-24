@@ -1,3 +1,4 @@
+import core/core.{Milliseconds}
 import core/process
 import core/task
 import core/supervisor
@@ -22,16 +23,16 @@ fn echo(receive) {
 
 pub fn sending_messages_to_task_test() {
     let pid = supervisor.spawn_link(echo)
-    let reply = process.call(pid, Ping(_, 500))
+    let reply = process.call(pid, Ping(_, 500), Milliseconds(1000))
     expect.equal(reply, Ok(500))
     // TODO this shouldn't be here
-    let supervisor.Down(down_reference) = unsafe_receive()
+    let supervisor.Down(_down_reference) = unsafe_receive()
     Nil
 }
 
 pub fn catch_exits_test() {
     let test = unsafe_self()
-    let sup = supervisor.spawn_link(fn(receive) {
+    let _ = supervisor.spawn_link(fn(receive) {
         let child = task.spawn_link(fn(_) {
             1/0
             Nil
