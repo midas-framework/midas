@@ -22,9 +22,6 @@ pub fn sending_messages_to_task_test() {
     let pid = task.spawn_link(echo)
     let reply = process.call(pid, Ping(_, 500), Infinity)
     expect.equal(reply, Ok(500))
-    // TODO this shouldn't be here
-    let supervisor.Down(down_reference) = unsafe_receive()
-    Nil
 }
 
 pub fn receive_timeout_test() {
@@ -35,10 +32,6 @@ pub fn receive_timeout_test() {
     })
     let reply = process.call(pid, Ping(_, Nil), Infinity)
     expect.equal(reply, Ok(Nil))
-    // TODO this shouldn't be here
-    let supervisor.Down(down_reference) = unsafe_receive()
-    Nil
-
 }
 
 pub fn monitor_test() {

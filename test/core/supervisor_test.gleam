@@ -21,13 +21,10 @@ fn echo(receive) {
     process.reply(from, number)
 }
 
-pub fn sending_messages_to_task_test() {
+pub fn sending_messages_to_supervisor_test() {
     let pid = supervisor.spawn_link(echo)
     let reply = process.call(pid, Ping(_, 500), Milliseconds(1000))
     expect.equal(reply, Ok(500))
-    // TODO this shouldn't be here
-    let supervisor.Down(_down_reference) = unsafe_receive()
-    Nil
 }
 
 pub fn catch_exits_test() {
