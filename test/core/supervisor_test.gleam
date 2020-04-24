@@ -8,7 +8,7 @@ import gleam/expect
 pub external fn unsafe_receive() -> supervisor.Protocol(x)
     = "core_supervisor_native" "do_receive"
 
-pub external fn unsafe_self() -> process.Process(m)
+pub external fn unsafe_self() -> process.Pid(m)
     = "erlang" "self"
 
 fn echo(receive) {

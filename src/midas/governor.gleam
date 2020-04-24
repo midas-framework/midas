@@ -1,5 +1,7 @@
+import gleam/dynamic
 import core/process
 
 pub fn spawn_link(server_supervisor) {
-    process.Pid
+    // TODO this is crazy
+    dynamic.unsafe_coerce(5)
 }

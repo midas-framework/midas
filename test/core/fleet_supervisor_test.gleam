@@ -2,7 +2,7 @@
 // import core/fleet_supervisor
 // import midas_utils
 //
-// pub external fn self() -> process.Process(m)
+// pub external fn self() -> process.Pid(m)
 //     = "erlang" "self"
 //
 // pub external fn receive() -> process.Protocol(m)

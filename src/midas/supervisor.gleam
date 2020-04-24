@@ -3,11 +3,20 @@ import core/supervisor
 import midas_tcp
 import midas/server_supervisor
 import midas/governor_supervisor
+// TODO remove
+import core/fleet_supervisor
 
 fn loop(receive, handler, listen_socket) {
     let server_sup = server_supervisor.spawn_link(handler, listen_socket)
     // Pass in acceptor count here
     let governor_sup = governor_supervisor.spawn_link(server_sup)
+    // These types aren't the same
+    // Potentially both are designated by the same protocol
+    // But should have diff return types
+    // Can't do this a only types.
+    // let process.Pid(fleet_supervisor.M(Int)) = governor_sup
+    server_sup == governor_sup
+    let pids = [server_sup, governor_sup]
     case receive() {
         supervisor.Exit -> {
             // Kill both and restart
@@ -24,7 +33,7 @@ fn init(receive, handler, port) {
     loop(receive, handler, listen_socket)
 }
 
-pub fn spawn_link(handler, port: Int) -> process.Process(Nil) {
+pub fn spawn_link(handler, port: Int) -> process.Pid(Nil) {
     supervisor.spawn_link(init(_, handler, port))
 }
 

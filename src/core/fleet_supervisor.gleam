@@ -8,7 +8,7 @@ import midas_utils
 
 pub type M(c) {
     // The return is a process that accepts messages about new processes that accept messages of the child
-    StartChild(core.Ref, process.Process(tuple(core.Ref, process.Process(c))))
+    StartChild(core.Ref, process.Pid(tuple(core.Ref, process.Pid(c))))
 }
 // // Children is a list of child pids
 fn loop(receive, children, task_fn) {
@@ -45,15 +45,15 @@ fn init(receive, task_fn) {
 // // function/runner/main/task
 // // task makes sense because main task is a thing
 
-pub fn spawn_link(child_fn) -> process.Process(M(c)) {
+pub fn spawn_link(child_fn) -> process.Pid(M(c)) {
     supervisor.spawn_link(init(_, child_fn))
 }
 
 // ref to a process that accepts a process
 // TODO remove
-external fn get_caller() -> process.Process(tuple(core.Ref, process.Process(c))) = "erlang" "self"
+external fn get_caller() -> process.Pid(tuple(core.Ref, process.Pid(c))) = "erlang" "self"
 
-pub fn start_child(supervisor: process.Process(M(c))) -> process.Process(c) {
+pub fn start_child(supervisor: process.Pid(M(c))) -> process.Pid(c) {
     let reference = process.monitor(supervisor)
     let Nil = process.send(supervisor, StartChild(reference, get_caller()))
     // Need error because supervisor could have died
