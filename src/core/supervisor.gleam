@@ -1,8 +1,8 @@
 import core/core
-import core/process.{Pid}
+import core/process.{Pid, BarePid}
 
 pub type Protocol(m) {
-    Exit
+    Exit(BarePid)
     Down(core.Ref)
     Message(m)
 }

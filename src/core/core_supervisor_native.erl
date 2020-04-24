@@ -2,8 +2,8 @@
 -export([spawn_link/1,  do_receive/0]).
 
 spawn_link(Task) ->
-  erlang:process_flag(trap_exit, true),
   erlang:spawn_link(fun () ->
+      erlang:process_flag(trap_exit, true),
       Task(fun () ->
           do_receive()
       end)
@@ -15,7 +15,7 @@ do_receive() ->
         {'DOWN', Ref, process, _Pid2, _Reason} ->
             {down, Ref};
         {'EXIT', Pid, _Reason} ->
-          exit;
+          {exit, Pid};
         Message ->
             {message, Message}
     end.

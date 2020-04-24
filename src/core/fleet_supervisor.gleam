@@ -31,13 +31,16 @@ fn loop(receive, children, task_fn) {
     let message = receive()
     case message {
         // TODO Needs to handle exit of parent properly
-        supervisor.Exit -> {
+        supervisor.Exit(_) -> {
             midas_utils.display("EXIT")
             let child = task_fn()
             loop(receive, children, task_fn)
         }
-        supervisor.Message(StartChild(from)) -> {
+        supervisor.Message(m) -> {
             midas_utils.display("supervisor")
+            midas_utils.display(m)
+
+            let StartChild(from) = m
             let child = task_fn()
             reply(from, child)
             loop(receive, children, task_fn)
@@ -78,6 +81,7 @@ pub fn call(pid, message_fn) {
 }
 
 pub fn start_child(supervisor: process.Pid(Protocol(c))) -> process.Pid(c) {
+    midas_utils.display("pool")
     let Ok(pid) = call(supervisor, StartChild(_from))
     pid
 

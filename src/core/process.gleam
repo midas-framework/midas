@@ -4,6 +4,9 @@ import core/core
 pub type Pid(m) {
     Internal(Pid(m))
 }
+pub type BarePid {
+    Internal2(BarePid)
+}
 // Is a Bare pid a pid of type Dynamic
 
 // Could Pid be parameterised supervisor or worker then receive could take self as an argument.

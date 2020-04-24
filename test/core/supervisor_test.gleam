@@ -27,14 +27,13 @@ pub fn sending_messages_to_supervisor_test() {
 
 pub fn catch_exits_test() {
     let test = unsafe_self()
-    let pid = supervisor.spawn_link(fn(receive) {
-        task.spawn_link(fn(_) {
+    let sup = supervisor.spawn_link(fn(receive) {
+        let child = task.spawn_link(fn(_) {
             1/0
             Nil
         })
-
-        process.send(test, receive())
+        process.send(test, tuple(child, receive()))
     })
-    let supervisor.Exit = unsafe_receive()
-    Nil
+    let supervisor.Message(tuple(pid1, supervisor.Exit(pid2))) = unsafe_receive()
+    expect.equal(pid1, pid2)
 }
