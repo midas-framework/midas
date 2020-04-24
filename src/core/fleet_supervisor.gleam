@@ -7,23 +7,10 @@ import midas_utils
 
 // Other Possible name: Clone, Copy, Replica, Homogenious
 
-pub type Caller(r) {
-    From(core.Ref, process.Pid(tuple(core.Ref, r)))
-}
-
-pub type Call(m, r) {
-    Ask(Caller(r), m)
-}
-
 pub type Protocol(c) {
     // The return is a process that accepts messages about new processes that accept messages of the child
     // StartChild(core.Ref, process.Pid(tuple(core.Ref, process.Pid(c))))
-    StartChild(Caller(process.Pid(c)))
-}
-
-fn reply(from: Caller(r), message: r) {
-    let From(reference, pid) = from
-    process.send(pid, tuple(reference, message))
+    StartChild(process.Caller(process.Pid(c)))
 }
 
 // Children will be a list of child pids
@@ -42,7 +29,7 @@ fn loop(receive, children, task_fn) {
 
             let StartChild(from) = m
             let child = task_fn()
-            reply(from, child)
+            process.reply(from, child)
             loop(receive, children, task_fn)
         }
         // Can monitor only be callable if self is a receive that accepts DOWNS?
@@ -64,40 +51,11 @@ pub fn spawn_link(child_fn) -> process.Pid(Protocol(c)) {
     supervisor.spawn_link(init(_, child_fn))
 }
 
-external fn self() -> process.Pid(a) = "erlang" "self"
-
-// Can check pid is self
-// Need error because supervisor could have died
-// needs to be separate receive fn because we want to ignore exitsand motiors from other pids
-pub external fn receive_reply(Caller(r)) -> Result(r, Nil)
-    = "core_process_native" "receive_reply"
-
-
-pub fn call(pid, message_fn) {
-    let reference = process.monitor(pid)
-    let from = From(reference, self())
-    let Nil = process.send(pid, message_fn(from))
-    receive_reply(from)
-}
-
 pub fn start_child(supervisor: process.Pid(Protocol(c))) -> process.Pid(c) {
     midas_utils.display("pool")
-    let Ok(pid) = call(supervisor, StartChild(_from))
+    let Ok(pid) = process.call(supervisor, StartChild(_from))
     pid
 
 }
 
 // From could include fn for promise that resolves to answer, probably more complicated to pass around anonymous fn
-
-import core/task
-fn debug() {
-    let child_fn = fn() {
-        task.spawn_link(fn(receive) {
-            let task.Message(5) = receive()
-            Nil
-        })
-    }
-    let sup = spawn_link(child_fn)
-    let task = start_child(sup)
-    process.send(task, 8)
-}

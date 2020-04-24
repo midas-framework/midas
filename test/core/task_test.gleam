@@ -8,21 +8,22 @@ import gleam/expect
 pub external fn unsafe_receive() -> supervisor.Protocol(x)
     = "core_supervisor_native" "do_receive"
 
-pub external fn unsafe_self() -> process.Pid(m)
-    = "erlang" "self"
+type Protocol {
+    Ping(process.Caller(Int), Int)
+};
 
 fn echo(receive) {
-    let m = receive()
-    let task.Message(tuple(test, number)) = m
-    process.send(test, number)
+    let task.Message(Ping(from, number)) = receive()
+    process.reply(from, number)
 }
 
 pub fn sending_messages_to_task_test() {
     let pid = task.spawn_link(echo)
-    process.send(pid, tuple(unsafe_self(), 500))
-
-    let supervisor.Message(reply) = unsafe_receive()
-    expect.equal(reply, 500)
+    let reply = process.call(pid, Ping(_, 500))
+    expect.equal(reply, Ok(500))
+    // TODO this shouldn't be here
+    let supervisor.Down(down_reference) = unsafe_receive()
+    Nil
 }
 
 pub fn monitor_test() {
