@@ -1,9 +1,13 @@
 import gleam/result
+import core/process
+import midas/supervisor
 import midas/request.{Request}
 import midas/response.{Response}
 
-pub external fn start_link(fn(Request) -> Response, Int) -> Result(Nil, Nil)
-    = "midas_supervisor" "start_link"
+pub fn start_link(handler: fn(Request) -> Response, port: Int) -> Result(process.Pid(Nil), Nil) {
+    let pid = supervisor.spawn_link(handler, port)
+    Ok(pid)
+}
 
 // No optional arguments or multy arity functions
 // pub fn start_link(handler: fn(Request) -> Response) -> Result(Nil, Nil) {
