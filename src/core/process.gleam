@@ -1,10 +1,24 @@
 import core/core
 
+// type Never {
+//     Never(Never)
+// }
+//
+// type ChildPid(a) {
+//     Temporary(Pid(a)) // Recoverable
+//     Transient(Pid(a)) // Unrecoverable
+//     Permanent(Pid(a))
+// }
+// Pids can have their behavior, Permanent(a) etc bit like child spec.
+// Permanent can have an unrepresentable return
+
+
 // function call
 pub type Pid(m) {
     Internal(Pid(m))
 }
 
+// Could call this a Pid and a Pid with a type an address
 pub type BarePid {
     Internal2(BarePid)
 }
@@ -32,6 +46,9 @@ pub external fn monitor(Pid(m)) -> core.Ref()
 
 external fn self() -> Pid(a)
     = "erlang" "self"
+
+pub external fn bare(Pid(a)) -> BarePid
+    = "erlang" "todo"
 
 // Can check pid is self
 // Need error because supervisor could have died
