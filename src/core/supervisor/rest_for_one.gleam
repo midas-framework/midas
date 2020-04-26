@@ -135,7 +135,7 @@ fn spawn_dummy2(_, _) {
     })
 }
 
-pub fn start_link(init: fn() -> ChildSpecs(a, b, c)) {
+pub fn spawn_link(init: fn() -> ChildSpecs(a, b, c)) {
     supervisor.spawn_link(fn(receive) {
         let specs = case init()  {
             One(fn1) -> tuple(fn1, spawn_dummy1, spawn_dummy2)
@@ -147,23 +147,3 @@ pub fn start_link(init: fn() -> ChildSpecs(a, b, c)) {
         loop(receive, specs, children)
     })
 }
-
-// fn init() {
-//     tuple(fn() {
-//         task.spawn_link(fn(receive) {
-//             let task.Message(5) = receive(Infinity)
-//             Nil
-//         })
-//     },
-//     fn(previous) {
-//         task.spawn_link(fn(receive) {
-//             let task.Message(5) = receive(Infinity)
-//             process.send(previous, 5)
-//             Nil
-//         })
-//     })
-// }
-//
-// fn demo() {
-//     start_link(init)
-// }
