@@ -6,7 +6,6 @@ import gleam/expect
 pub external fn unsafe_receive(Wait) -> m
     = "process_native" "do_receive"
 
-
 pub fn send_message_test() {
     let test = process.unsafe_self()
 
@@ -138,5 +137,6 @@ pub fn call_error_for_down_process_test() {
     let reply = process.call(pid, Ping(_, 500), Infinity)
 
     // TODO handle this there is no concept of down
+    // Gone(ExitReason)/Slow
     expect.equal(reply, Error(Timeout))
 }

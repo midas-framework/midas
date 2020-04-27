@@ -123,6 +123,12 @@ pub type From(r) {
 pub external fn receive_reply(Ref, Wait) -> Result(r, Timeout)
     = "process_native" "receive_reply"
 
+// pub type CallError {
+//     Timeout // Slow
+//     Down    // Down(ExitReason)
+// }
+
+
 pub fn call(pid: Pid(m), constructor: fn(From(r)) -> m, wait: Wait) -> Result(r, Timeout) {
     let reference = monitor_process(pid)
     let from = From(reference, unsafe_self())
