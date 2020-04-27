@@ -41,8 +41,14 @@ fn read_request(socket) {
 }
 
 
-fn run(handler, listen_socket) {
+pub type Accept {
+    Accept(From(Nil))
+}
+
+fn run(receive, handler, listen_socket) {
+    let Ok(Accept(from)) = receive(Infinity)
     let Ok(socket) = midas_tcp.accept(listen_socket)
+    process.reply(from, Nil)
     let Ok(request) = read_request(socket)
     let response = handler(request)
     let Ok(Nil) = midas_tcp.send(socket, to_string(response))
@@ -50,8 +56,12 @@ fn run(handler, listen_socket) {
 }
 
 pub fn spawn_link(handler, listen_socket) {
-    let pid = process.spawn_link(fn(_receive) {
-        run(handler, listen_socket)
+    let pid = process.spawn_link(fn(receive) {
+        run(receive, handler, listen_socket)
     })
     pid
+}
+
+pub fn accept(pid) {
+    process.call(pid, Accept(_), Infinity)
 }

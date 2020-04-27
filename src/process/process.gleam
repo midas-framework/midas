@@ -58,7 +58,7 @@ pub type Ref() {
     Ref(Ref)
 }
 
-type MonitorType {
+pub type MonitorType {
     Process
 }
 
