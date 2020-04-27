@@ -1,8 +1,5 @@
-import core/core.{Infinity}
-import core/process.{Pid}
-import core/process
-import core/task
-import core/supervisor
+import process/process
+import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
 
 pub type ChildSpecs(a, b, c) {
     One(fn() -> Pid(a))
@@ -18,7 +15,7 @@ type ChildState(a) {
 }
 
 fn do_stop(pid) {
-    process.kill(pid)
+    process.exit(pid, Kill)
     Stopping(pid)
 }
 
@@ -97,9 +94,14 @@ fn child_pid(child) {
     }
 }
 
+pub type Messages(m) {
+    WhichChildren(From(List(Pid(m))))
+    EXIT(BarePid, ExitReason)
+}
+
 fn loop(receive, specs, children) {
-    case receive() {
-        supervisor.Exit(pid) -> {
+    case receive(Infinity) {
+        Ok(EXIT(pid, reason)) -> {
             let tuple(fn1, fn2, fn3) = specs
             let tuple(child1, child2, child3) = children
 
@@ -126,20 +128,21 @@ fn loop(receive, specs, children) {
 
 // Theres probably an more efficient no op pid that doesnt need to start a real process
 fn spawn_dummy1(_) {
-    task.spawn_link(fn(receive) {
-        let task.Message(_) = receive(Infinity)
-        Nil
+    process.spawn_link(fn(receive) {
+        let _ = receive(Infinity)
+        Normal
     })
 }
 fn spawn_dummy2(_, _) {
-    task.spawn_link(fn(receive) {
-        let task.Message(_) = receive(Infinity)
-        Nil
+    process.spawn_link(fn(receive) {
+        let _ = receive(Infinity)
+        Normal
     })
 }
 
 pub fn spawn_link(init: fn() -> ChildSpecs(a, b, c)) {
-    supervisor.spawn_link(fn(receive) {
+    process.spawn_link(fn(receive) {
+        process.process_flag(TrapExit(True))
         let specs = case init()  {
             One(fn1) -> tuple(fn1, spawn_dummy1, spawn_dummy2)
             Two(fn1, fn2) -> tuple(fn1, fn2, spawn_dummy2)

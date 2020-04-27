@@ -1,10 +1,13 @@
-import core/fleet_supervisor
+import process/process
+import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/supervisor/set_supervisor
+
 import midas/governor
 
 pub fn spawn_link(server_supervisor) {
-    let sup = fleet_supervisor.spawn_link(fn() {
+    let sup = set_supervisor.spawn_link(fn() {
         governor.spawn_link(server_supervisor)
     })
-    let _ = fleet_supervisor.start_child(sup)
+    let _ = set_supervisor.start_child(sup)
     sup
 }

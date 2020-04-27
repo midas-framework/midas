@@ -2,7 +2,10 @@ import gleam/iodata
 import gleam/list
 import gleam/int
 import gleam/result
-import core/task
+
+import process/process
+import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+
 
 import midas_tcp
 import midas_utils
@@ -43,11 +46,11 @@ fn run(handler, listen_socket) {
     let Ok(request) = read_request(socket)
     let response = handler(request)
     let Ok(Nil) = midas_tcp.send(socket, to_string(response))
-    Nil
+    Normal
 }
 
 pub fn spawn_link(handler, listen_socket) {
-    let pid = task.spawn_link(fn(_receive) {
+    let pid = process.spawn_link(fn(_receive) {
         run(handler, listen_socket)
     })
     pid
