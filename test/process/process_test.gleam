@@ -22,7 +22,7 @@ pub fn send_message_test() {
 pub fn receive_timeout_test() {
     let test = process.unsafe_self()
 
-    let pid = process.spawn_link(fn(receive) {
+    process.spawn_link(fn(receive) {
         let r = receive(Milliseconds(100))
         process.send(test, r)
         Normal
@@ -66,7 +66,7 @@ pub fn kill_process_test() {
     })
 
     let Ok(response) = unsafe_receive(Infinity)
-    let Ok(Exit(down_pid, reason)) = response
+    let Ok(Exit(_down_pid, reason)) = response
     // Need to sort out kill and killed.
     // All other exit reasons are the same on both sides.
     expect.equal(reason, process.Killed)

@@ -38,7 +38,7 @@ fn loop(receive, start_child, children) {
         }
         Ok(EXIT(down_pid, _)) ->{
             let predicate = fn(pid){ process.bare(pid) == down_pid }
-            let tuple(found, children) = pop(children, predicate, [])
+            let tuple(_found, children) = pop(children, predicate, [])
             loop(receive, start_child, children)
         }
     }

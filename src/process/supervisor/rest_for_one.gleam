@@ -25,7 +25,7 @@ fn stop3(children) {
 
     case child3 {
         Running(pid) -> tuple(child1, child2, do_stop(pid))
-        Stopping(pid) -> tuple(child1, child2, child3)
+        Stopping(_pid) -> tuple(child1, child2, child3)
         Stopped -> tuple(child1, child2, child3)
     }
 }
@@ -34,7 +34,7 @@ fn stop2(children) {
 
     case child2 {
         Running(pid) -> tuple(child1, do_stop(pid), child3)
-        Stopping(pid) -> tuple(child1, child2, child3)
+        Stopping(_pid) -> tuple(child1, child2, child3)
         Stopped -> stop3(tuple(child1, child2, child3))
     }
 }
@@ -43,7 +43,7 @@ fn stop1(children) {
 
     case child1 {
         Running(pid) -> tuple(do_stop(pid), child2, child3)
-        Stopping(pid) -> tuple(child1, child2, child3)
+        Stopping(_pid) -> tuple(child1, child2, child3)
         Stopped -> stop2(tuple(child1, child2, child3))
     }
 }
@@ -67,8 +67,6 @@ fn start1(specs) {
 }
 
 fn maybe_restart(specs, children) {
-    let tuple(child1, child2, child3) = children
-
     case children {
         // All running
         tuple(Running(_), Running(_), Running(_)) -> children
@@ -102,8 +100,7 @@ pub type Messages(m) {
 
 fn loop(receive, specs, children) {
     case receive(Infinity) {
-        Ok(EXIT(pid, reason)) -> {
-            let tuple(fn1, fn2, fn3) = specs
+        Ok(EXIT(pid, _reason)) -> {
             let tuple(child1, child2, child3) = children
 
             let pid1 = child_pid(child1)

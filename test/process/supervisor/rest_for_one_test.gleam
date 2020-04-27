@@ -10,7 +10,7 @@ pub external fn unsafe_receive(Wait) -> m
 
 pub fn start_up_order_test() {
     let test = process.unsafe_self()
-    let sup = rest_for_one.spawn_link(fn(){
+    rest_for_one.spawn_link(fn(){
         rest_for_one.Two(
             fn() {
                 process.spawn_link(fn(receive) {
