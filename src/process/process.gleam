@@ -19,6 +19,7 @@ pub type Pid(m) {
 pub type ExitReason {
     Normal
     Kill
+    Killed
     // https://erlang.org/doc/reference_manual/errors.html#exit_reasons
     // Other types e.g. BadArith(Stack) can all be enumerated here.
 }
@@ -40,8 +41,31 @@ pub fn self(_: Receive(m)) -> Pid(m) {
 }
 
 // This can be typed because an untyped pid is only the result of a DOWN or EXIT Message
+// TODO make exit reason Killed and have a special fn for kill
 pub external fn exit(Pid(m), ExitReason) -> Bool
     = "erlang" "exit"
+
+// Add a clause that turned Killed into Kill
+
+// Or just StopReason
+
+// type Kill {
+//     Kill
+// }
+//
+// external fn kill(Pid(m), Kill) -> Bool
+// = "erlang" "exit"
+//
+// pub fn exit(pid, reason) {
+//     case reason {
+//         Killed -> kill(pid, Kill)
+//         _ -> do_exit(pid, reason)
+//     }
+// }
+// The return value of a run function should just be the exit reason of a process.
+// Then a Down message can just be treated as a promise for the result of the computation
+
+// erlang:is_process_alive
 
 // WORKING WITH UNTYPED PROCESSES
 
@@ -62,7 +86,7 @@ pub type MonitorType {
     Process
 }
 
-external fn monitor(MonitorType, Pid(m)) -> Ref
+pub external fn monitor(MonitorType, Pid(m)) -> Ref
     = "erlang" "monitor"
 
 pub fn monitor_process(pid) {

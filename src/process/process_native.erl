@@ -1,11 +1,12 @@
 -module(process_native).
--export([spawn_link/1, identity/1, receive_reply/2, process_flag/1]).
+-export([spawn_link/1, do_receive/1, identity/1, receive_reply/2, process_flag/1]).
 
 spawn_link(Run) ->
   erlang:spawn_link(fun () ->
-      Run(fun (Wait) ->
+      Return = Run(fun (Wait) ->
           do_receive(Wait)
-      end)
+      end),
+      erlang:exit(Return)
   end).
 
 do_receive({milliseconds, Milliseconds}) ->
