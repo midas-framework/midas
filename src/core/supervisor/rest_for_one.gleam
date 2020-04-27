@@ -3,14 +3,13 @@ import core/process.{Pid}
 import core/process
 import core/task
 import core/supervisor
+import midas_utils
 
 pub type ChildSpecs(a, b, c) {
     One(fn() -> Pid(a))
     Two(fn() -> Pid(a), fn(Pid(a)) -> Pid(b))
     Three(fn() -> Pid(a), fn(Pid(a)) -> Pid(b), fn(Pid(a), Pid(b)) -> Pid(c))
 }
-
-external fn exit(Pid(a)) -> Nil = "erlang" "exit"
 
 type ChildState(a) {
     Running(Pid(a))
@@ -20,7 +19,7 @@ type ChildState(a) {
 }
 
 fn do_stop(pid) {
-    exit(pid)
+    process.kill(pid)
     Stopping(pid)
 }
 
@@ -48,7 +47,7 @@ fn stop1(children) {
     case child1 {
         Running(pid) -> tuple(do_stop(pid), child2, child3)
         Stopping(pid) -> tuple(child1, child2, child3)
-        Stopped -> stop3(tuple(child1, child2, child3))
+        Stopped -> stop2(tuple(child1, child2, child3))
     }
 }
 
@@ -113,7 +112,12 @@ fn loop(receive, specs, children) {
                 p if p == pid1 -> tuple(Stopped, child2, child3)
                 p if p == pid2 -> tuple(child1, Stopped, child3)
                 p if p == pid3 -> tuple(child1, child2, Stopped)
+                // p -> {
+                //     // TODO handle parent pid
+                //     tuple(child1, child2, child3)
+                // }
             }
+
 
             let children = maybe_restart(specs, children)
             loop(receive, specs, children)
@@ -144,6 +148,7 @@ pub fn spawn_link(init: fn() -> ChildSpecs(a, b, c)) {
         }
 
         let children = tuple(Stopped, Stopped, Stopped)
+        let children = maybe_restart(specs, children)
         loop(receive, specs, children)
     })
 }

@@ -48,7 +48,18 @@ external fn self() -> Pid(a)
     = "erlang" "self"
 
 pub external fn bare(Pid(a)) -> BarePid
-    = "erlang" "todo"
+    = "core_process_native" "identity"
+
+type Reason{
+    Kill
+    Shutdown
+}
+
+external fn exit(Pid(a), Reason) -> Bool = "erlang" "exit"
+
+pub fn kill(pid) {
+    exit(pid, Kill)
+}
 
 // Can check pid is self
 // Need error because supervisor could have died

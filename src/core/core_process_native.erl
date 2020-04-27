@@ -1,5 +1,5 @@
 -module(core_process_native).
--export([monitor/1, receive_reply/2]).
+-export([monitor/1, receive_reply/2, identity/1]).
 
 monitor(Pid) ->
   erlang:monitor(process, Pid).
@@ -17,3 +17,5 @@ receive_reply({from, Ref, _Pid}, Wait) ->
       erlang:demonitor(Ref, [flush]),
       {error, timeout}
   end.
+
+identity(X) -> X.
