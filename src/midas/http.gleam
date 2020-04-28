@@ -1,8 +1,8 @@
 import gleam/string
 import midas_utils
 import midas/headers as h_utils
-// All these functions assume socket is reading one line at a time.
 
+// All these functions assume socket is reading one line at a time.
 // HTTP standard method as defined by RFC 2616, and PATCH which is defined by
 // RFC 5789.
 //
@@ -19,8 +19,8 @@ pub type Method {
 }
 
 pub type HeaderLine {
-    Header(tuple(String, String))
-    EndOfHeaders
+  Header(tuple(String, String))
+  EndOfHeaders
 }
 
 fn parse_method(method_string) -> Result(Method, Nil) {
@@ -39,21 +39,21 @@ fn parse_method(method_string) -> Result(Method, Nil) {
 }
 
 pub fn parse_request_line(line: String) {
-    let tuple(method_string, Ok(rest)) = midas_utils.split_on(line, " ")
-    let Ok(method) = parse_method(method_string)
+  let tuple(method_string, Ok(rest)) = midas_utils.split_on(line, " ")
+  let Ok(method) = parse_method(method_string)
 
-    let tuple(path, Ok("HTTP/1.1\r\n")) = midas_utils.split_on(rest, " ")
-    // TODO check starts with "/"
-    Ok(tuple(method, path))
+  let tuple(path, Ok("HTTP/1.1\r\n")) = midas_utils.split_on(rest, " ")
+  // TODO check starts with "/"
+  Ok(tuple(method, path))
 }
 
 pub fn parse_header_line(line: String) -> Result(HeaderLine, Nil) {
-    let tuple(line, Ok("")) = midas_utils.split_on(line, "\r\n")
-    case line {
-        "" -> Ok(EndOfHeaders)
-        _ -> {
-            let tuple(key, Ok(value)) = midas_utils.split_on(line, ": ")
-            Ok(Header(tuple(string.lowercase(key), value)))
-        }
+  let tuple(line, Ok("")) = midas_utils.split_on(line, "\r\n")
+  case line {
+    "" -> Ok(EndOfHeaders)
+    _ -> {
+      let tuple(key, Ok(value)) = midas_utils.split_on(line, ": ")
+      Ok(Header(tuple(string.lowercase(key), value)))
     }
+  }
 }
