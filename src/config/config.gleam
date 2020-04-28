@@ -18,12 +18,14 @@ external fn os_get_env() -> List(String) =
 pub fn get_env() -> Map(String, String) {
   os_get_env()
   |> list.fold(
-      _,
     [],
     fn(env_var_name_value, done) {
-      let tuple(key, maybe_value) = midas_utils.split_on(env_var_name_value, "=")
+      let tuple(
+        key,
+        maybe_value,
+      ) = midas_utils.split_on(env_var_name_value, "=")
       case maybe_value {
-        Ok(value) -> [tuple(key, value) ..done]
+        Ok(value) -> [tuple(key, value), ..done]
         Error(Nil) -> done
       }
     },
