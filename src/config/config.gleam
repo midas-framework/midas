@@ -8,10 +8,12 @@ type ENV =
 type Parser(a, b) =
   fn(String) -> Result(a, b)
 
+// https://erlang.org/doc/man/os.html#getenv-0
+// https://github.com/elixir-lang/elixir/blob/v1.10.3/lib/elixir/lib/system.ex#L438-L444
 external fn os_get_env() -> List(String) =
   "os" "getenv"
 
-fn get_env() -> Map(String, String) {
+pub fn get_env() -> Map(String, String) {
   os_get_env()
   |> list.fold(
     [],
