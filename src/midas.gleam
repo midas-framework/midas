@@ -5,8 +5,12 @@ import midas/supervisor
 import midas/request.{Request}
 import midas/response.{Response}
 
+pub fn spawn_link(handler: fn(Request) -> Response, port: Int) {
+  supervisor.spawn_link(handler, port)
+}
+
 pub fn start_link(handler: fn(Request) -> Response, port: Int) {
-  let pid = supervisor.spawn_link(handler, port)
+  let pid = spawn_link(handler, port)
   Ok(pid)
 }
 // No optional arguments or multy arity functions
