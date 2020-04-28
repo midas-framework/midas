@@ -21,7 +21,7 @@ fn read_headers(socket, headers) {
 }
 
 fn read_request(socket) {
-    // https://erlang.org/doc/man/timer.html#exit_after-2
+  // https://erlang.org/doc/man/timer.html#exit_after-2
   let Ok(line) = tcp.read_line(socket, 5000)
   let Ok(tuple(method, path)) = http.parse_request_line(line)
   let Ok(headers) = read_headers(socket, [])
