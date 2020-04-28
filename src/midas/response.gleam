@@ -14,7 +14,7 @@ pub fn set_header(response: Response, key: String, value: String) -> Response {
 }
 
 pub fn get_header(response: Response, key: String) -> Option(String) {
-  let Response(status: _, headers: headers, body: _) = response
+  let Response(headers: headers, ..) = response
   h_utils.find(headers, key)
 }
 
@@ -25,7 +25,7 @@ pub fn concat(strings: List(String)) -> String {
 }
 
 pub fn to_string(response: Response) -> String {
-  let Response(status: status, headers: _headers, body: body) = response
+  let Response(status: status, body: body, ..) = response
   let reason_phrase = case status {
     200 -> "OK"
     404 -> "Not Found"

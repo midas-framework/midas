@@ -21,25 +21,13 @@ pub type Request {
 // Not Option(String), there is no useful distinction between a body of "" and Nil,
 // if needed a get_body funcation can handle the difference, more sensible this way because Nil vs "" decided by method and headers
 pub fn host(request: Request) -> String {
-  let Request(
-    method: _,
-    authority: authority,
-    headers: _,
-    path: _,
-    body: _,
-  ) = request
+  let Request(authority: authority, ..) = request
   let tuple(host, _port) = midas_utils.split_on(authority, ":")
   host
 }
 
 pub fn port(request: Request) -> Int {
-  let Request(
-    method: _,
-    authority: authority,
-    headers: _,
-    path: _,
-    body: _,
-  ) = request
+  let Request(authority: authority, ..) = request
   let tuple(_host, port_string) = midas_utils.split_on(authority, ":")
 
   case port_string {
@@ -73,13 +61,7 @@ fn split_segments(path) {
 }
 
 pub fn segments(request: Request) -> List(String) {
-  let Request(
-    method: _,
-    authority: _,
-    headers: _,
-    path: raw_path,
-    body: _,
-  ) = request
+  let Request(path: raw_path, ..) = request
   let tuple(path, _query) = midas_utils.split_on(raw_path, "?")
   split_segments(path)
 }
@@ -101,13 +83,7 @@ fn do_split_query_string(query_string, accumulator) {
 }
 
 pub fn query(request: Request) -> List(tuple(String, String)) {
-  let Request(
-    method: _,
-    authority: _,
-    headers: _,
-    path: raw_path,
-    body: _,
-  ) = request
+  let Request(path: raw_path, ..) = request
   let tuple(_path, query_string) = midas_utils.split_on(raw_path, "?")
   case query_string {
     Ok(query_string) -> do_split_query_string(query_string, [])
@@ -134,12 +110,6 @@ pub fn set_header(request: Request, key: String, value: String) -> Request {
 }
 
 pub fn get_header(request: Request, key: String) -> Option(String) {
-  let Request(
-    method: _,
-    authority: _,
-    headers: headers,
-    path: _,
-    body: _,
-  ) = request
+  let Request(headers: headers, ..) = request
   h_utils.find(headers, key)
 }
