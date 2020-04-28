@@ -113,7 +113,7 @@ fn loop(receive, specs, children) {
       }
 
       // p -> {
-      //     // TODO handle parent pid
+      //     // TODO handle parent pid, for the moment parents are simply killed.
       //     tuple(child1, child2, child3)
       // }
       let children = maybe_restart(specs, children)

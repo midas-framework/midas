@@ -1,4 +1,4 @@
--module(midas_tcp_native).
+-module(net_tcp_native).
 -export([listen/1, send/2, read_line/2, read_blob/3]).
 
 listen(Port) ->

@@ -4,7 +4,7 @@ import gleam/int
 import gleam/result
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
-import midas_tcp
+import net/tcp
 import midas_utils
 import midas/http
 import midas/headers as h_utils
@@ -13,7 +13,7 @@ import midas/request.{Request}
 import midas/response.{Response, to_string}
 
 fn read_headers(socket, headers) {
-  let Ok(line) = midas_tcp.read_line(socket, 5000)
+  let Ok(line) = tcp.read_line(socket, 5000)
   case http.parse_header_line(line) {
     Ok(http.Header(header)) -> read_headers(socket, [header, ..headers])
     Ok(http.EndOfHeaders) -> Ok(list.reverse(headers))
@@ -21,7 +21,7 @@ fn read_headers(socket, headers) {
 }
 
 fn read_request(socket) {
-  let Ok(line) = midas_tcp.read_line(socket, 5000)
+  let Ok(line) = tcp.read_line(socket, 5000)
   let Ok(tuple(method, path)) = http.parse_request_line(line)
   let Ok(headers) = read_headers(socket, [])
   let Ok(authority) = h_utils.find(headers, "host")
@@ -33,7 +33,7 @@ fn read_request(socket) {
   let body = case content_length {
     0 -> ""
     _ -> {
-      let Ok(body) = midas_tcp.read_blob(socket, content_length, 5000)
+      let Ok(body) = tcp.read_blob(socket, content_length, 5000)
       body
     }
   }
@@ -54,11 +54,11 @@ pub type Accept {
 
 fn run(receive, handler, listen_socket) {
   let Ok(Accept(from)) = receive(Infinity)
-  let Ok(socket) = midas_tcp.accept(listen_socket)
+  let Ok(socket) = tcp.accept(listen_socket)
   process.reply(from, Nil)
   let Ok(request) = read_request(socket)
   let response = handler(request)
-  let Ok(Nil) = midas_tcp.send(socket, to_string(response))
+  let Ok(Nil) = tcp.send(socket, to_string(response))
   Normal
 }
 
