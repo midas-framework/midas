@@ -12,7 +12,10 @@ query(String, GleamArgs) ->
   case Return of
     #{command := select, num_rows := Count, rows := PgRows} ->
       Rows = [map_row(PgRow) || PgRow <- PgRows],
-      {ok, {select, Count, Rows}}
+      {ok, {select, Count, Rows}};
+    #{command := insert, num_rows := Count, rows := PgRows} ->
+      Rows = [map_row(PgRow) || PgRow <- PgRows],
+      {ok, {insert, Count, Rows}}
   end.
 
 map_row(PgRow) ->

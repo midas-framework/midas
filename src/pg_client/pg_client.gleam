@@ -20,6 +20,7 @@ pub type PgType{
 
 pub type SqlReturn{
     Select(Int, List(List(PgType)))
+    Insert(Int, List(List(PgType)))
 }
 
 pub external fn query(String, List(PgType)) -> Result(SqlReturn, Nil) =
