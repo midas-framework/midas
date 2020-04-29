@@ -27,7 +27,7 @@ map_element(PgElement) ->
       {pg_string, E};
     E when is_integer(E) ->
       {pg_int, E};
-    E when is_integer(E) ->
+    E when is_boolean(E) ->
       {pg_bool, E};
     {Date, Time}  ->
       {pg_date_time, {Date, Time}}
