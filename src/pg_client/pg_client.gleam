@@ -1,6 +1,6 @@
 // gleam_pg/pg_client
 
-
+import gleam/dynamic.{Dynamic}
 import process/process.{Pid}
 
 pub type PgoOptions {
@@ -16,6 +16,8 @@ pub external fn start_link(List(PgoOptions)) -> Result(Pid(a), Nil) =
 pub type PgType{
     PgString(String)
     PgInt(Int)
+    PgBool(Bool)
+    PgDateTime(Dynamic)
 }
 
 pub type SqlReturn{

@@ -26,5 +26,9 @@ map_element(PgElement) ->
     E when is_binary(E) ->
       {pg_string, E};
     E when is_integer(E) ->
-      {pg_int, E}
+      {pg_int, E};
+    E when is_integer(E) ->
+      {pg_bool, E};
+    {Date, Time}  ->
+      {pg_date_time, {Date, Time}}
   end.
