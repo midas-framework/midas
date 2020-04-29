@@ -7,16 +7,16 @@ start_link(OptionsList) ->
 
 
 query(String, GleamArgs) ->
-  Args = [[Value || {_, Value} <- GleamArgs]],
+  Args = [Value || {_, Value} <- GleamArgs],
   Return = pgo:query(String, Args),
   case Return of
     #{command := select, num_rows := Count, rows := PgRows} ->
-      Rows = [[map_row(PgRow) || PgRow <- PgRows]],
+      Rows = [map_row(PgRow) || PgRow <- PgRows],
       {ok, {select, Count, Rows}}
   end.
 
 map_row(PgRow) ->
-  [[map_element(PgElement) || PgElement <- PgRow]].
+  [map_element(PgElement) || PgElement <- PgRow].
 
 map_element(PgElement) ->
   case PgElement of
