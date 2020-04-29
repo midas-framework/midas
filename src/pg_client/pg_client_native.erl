@@ -19,7 +19,7 @@ query(String, GleamArgs) ->
   end.
 
 map_row(PgRow) ->
-  [map_element(PgElement) || PgElement <- PgRow].
+  [map_element(PgElement) || PgElement <- erlang:tuple_to_list(PgRow)].
 
 map_element(PgElement) ->
   case PgElement of
