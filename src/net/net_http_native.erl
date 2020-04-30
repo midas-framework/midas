@@ -9,7 +9,7 @@ listen(Port) ->
   gen_tcp:listen(Port, TcpOptions).
 
 
-read_body(Socket, Length, Timeout) ->
+read_body(Socket, Length, Timeout) when Length > 0 ->
   inet:setopts(Socket, [{packet, raw}]),
   gen_tcp:recv(Socket, Length, Timeout).
 
