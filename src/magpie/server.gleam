@@ -67,8 +67,7 @@ fn response_to_string(response) {
         let tuple(name, value) = header
         string.concat([buffer, name, ": ", value, "\r\n"])
     })
-    let response = string.concat([response_head, body])
-    midas_utils.display(response)
+    let response = string.concat([response_head, "\r\n", body])
     response
     // TODO needs to add content length Or does it!, use the set_body function
 }
