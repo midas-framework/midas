@@ -1,13 +1,22 @@
-pub type ListenSocket {
-  ListenSocket(ListenSocket)
-}
+pub external type ListenSocket
 
-pub type Socket {
-  Socket(Socket)
+pub external type Socket
+
+external type Charlist
+
+external fn binary_to_list(String) -> Charlist =
+  "erlang" "binary_to_list"
+
+// TODO List of Options
+external fn do_connect(Charlist, Int, List(Nil)) -> Result(Socket, Nil) =
+  "gen_tcp" "connect"
+
+pub fn connect(address, port) -> Result(Socket, Nil) {
+  do_connect(binary_to_list(address), port, [])
 }
 
 pub external fn listen(Int) -> Result(ListenSocket, Nil) =
-  "net_tcp_native" "listen"
+  "net_http_native" "listen"
 
 pub external fn accept(ListenSocket) -> Result(Socket, Nil) =
   "gen_tcp" "accept"
