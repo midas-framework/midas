@@ -43,7 +43,6 @@ fn read_request(socket) {
     0 -> ""
     _ -> {
       let Ok(body) = wire.read_body(socket, content_length, 5000)
-      midas_utils.display(body)
       body
     }
   }
@@ -89,8 +88,6 @@ fn run(receive, handler, listen_socket) {
   process.reply(from, Nil)
   let Ok(request) = read_request(socket)
   let response = handler(request)
-  midas_utils.display(response)
-  midas_utils.display(response_to_string(response))
   let Ok(Nil) = wire.send(socket, response_to_string(response))
   Normal
 }

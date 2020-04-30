@@ -19,8 +19,14 @@ fn handle_request(request) {
 
 pub fn echo_body_test() {
     midas.spawn_link(handle_request, 10001)
+
     let Ok(socket) = tcp.connect("localhost", 10001)
     tcp.send(socket, "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-length: 14\r\ncontent-type: text/unusual\r\n\r\nHello, Server!")
     let Ok(response) = tcp.read_blob(socket, 0, 100)
     expect.equal(response, "HTTP/1.1 200 \r\ncontent-type: text/unusual\r\nHello, Server!")
+
+    let Ok(socket) = tcp.connect("localhost", 10001)
+    tcp.send(socket, "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n")
+    let Ok(response) = tcp.read_blob(socket, 0, 100)
+    expect.equal(response, "HTTP/1.1 200 \r\ncontent-type: text/unusual\r\n")
 }
