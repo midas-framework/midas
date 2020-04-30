@@ -7,12 +7,17 @@ external type Charlist
 external fn binary_to_list(String) -> Charlist =
   "erlang" "binary_to_list"
 
+ type InetOpts {
+     Binary
+     Active(Bool)
+ }
+
 // TODO List of Options
-external fn do_connect(Charlist, Int, List(Nil)) -> Result(Socket, Nil) =
+external fn do_connect(Charlist, Int, List(InetOpts)) -> Result(Socket, Nil) =
   "gen_tcp" "connect"
 
 pub fn connect(address, port) -> Result(Socket, Nil) {
-  do_connect(binary_to_list(address), port, [])
+  do_connect(binary_to_list(address), port, [Binary, Active(False)])
 }
 
 pub external fn listen(Int) -> Result(ListenSocket, Nil) =

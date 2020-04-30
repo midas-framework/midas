@@ -15,8 +15,10 @@ pub external fn accept(ListenSocket) -> Result(Socket, Nil) =
 // TODO real Error
 external fn recv(Socket, length: Int, timeout: Int) -> Result(p, Nil) = "gen_tcp" "recv"
 
-// Patch
-type HttpURI {
+pub external fn send(Socket, String) -> Result(Nil, Nil) =
+  "net_http_native" "send"
+
+pub type HttpURI {
   AbsPath(String)
 }
 
@@ -53,13 +55,15 @@ fn do_read_headers(socket, timeout, headers) {
 
 pub fn read_request_head(socket, timeout) {
     case read_packet(socket, timeout) {
-        Ok(HttpRequest(method, AbsPath(path), tuple(1, 1))) -> {
+        Ok(HttpRequest(method, http_uri, tuple(1, 1))) -> {
             let method = atom_or_binary_to_string(method)
             case do_read_headers(socket, timeout, []) {
-                Ok(headers) -> Ok(tuple(method, path, headers))
+                Ok(headers) -> Ok(tuple(method, http_uri, headers))
                 _ -> Error(Nil)
             }
         }
         _ -> Error(Nil)
     }
 }
+
+pub external fn read_body(socket, content_length, timeout) -> Result(String, Nil) = "net_http_native" "read_body"

@@ -1,9 +1,8 @@
 import gleam/result
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
-import midas/supervisor
-import midas/request.{Request}
-import midas/response.{Response}
+import magpie/supervisor
+import midas/http.{Request, Response}
 
 pub fn spawn_link(handler: fn(Request) -> Response, port: Int) {
   supervisor.spawn_link(handler, port)

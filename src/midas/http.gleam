@@ -1,6 +1,6 @@
-import gleam/string
+import gleam/list
+import gleam/result.{Option}
 import midas_utils
-import midas/headers as h_utils
 
 // All these functions assume socket is reading one line at a time.
 // HTTP standard method as defined by RFC 2616, and PATCH which is defined by
@@ -18,42 +18,82 @@ pub type Method {
   Patch
 }
 
-pub type HeaderLine {
-  Header(tuple(String, String))
-  EndOfHeaders
+// scheme is part of the connection level
+// Body is String, Not Option(String), there is no useful distinction between a body of "" and Nil,
+// if needed a get_body funcation can handle the difference, more sensible this way because Nil vs "" decided by method and headers
+pub type Request {
+  Request(
+    method: Method,
+    path: String,
+    query: Option(String),
+    authority: String,
+    headers:  List(tuple(String, String)),
+    body: String,
+  )
 }
 
-fn parse_method(method_string) -> Result(Method, Nil) {
-  case method_string {
-    "CONNECT" -> Ok(Connect)
-    "DELETE" -> Ok(Delete)
-    "GET" -> Ok(Get)
-    "HEAD" -> Ok(Head)
-    "OPTIONS" -> Ok(Options)
-    "PATCH" -> Ok(Patch)
-    "POST" -> Ok(Post)
-    "PUT" -> Ok(Put)
-    "TRACE" -> Ok(Trace)
-    _ -> Error(Nil)
+pub type Response {
+  Response(status: Int, headers: List(tuple(String, String)), body: String)
+}
+
+// Headers
+
+fn match_key(pair, search) {
+  let tuple(key, _value) = pair
+  key == search
+}
+
+pub fn get_header(headers, key) {
+  case list.filter(headers, match_key(_, key)) {
+    [] -> Error(Nil)
+    [tuple(_key, value)] -> Ok(value)
   }
 }
 
-pub fn parse_request_line(line: String) {
-  let tuple(method_string, Ok(rest)) = midas_utils.split_on(line, " ")
-  let Ok(method) = parse_method(method_string)
+// Request
 
-  let tuple(path, Ok("HTTP/1.1\r\n")) = midas_utils.split_on(rest, " ")
-  // TODO check starts with "/"
-  Ok(tuple(method, path))
-}
+// I hardly use these
+// pub fn host(request: Request) -> String {
+//   let Request(authority: authority, ..) = request
+//   let tuple(host, _port) = midas_utils.split_on(authority, ":")
+//   host
+// }
+//
+// pub fn port(request: Request) -> Int {
+//   let Request(authority: authority, ..) = request
+//   let tuple(_host, port_string) = midas_utils.split_on(authority, ":")
+//
+//   case port_string {
+//     Error(Nil) -> 80
+//     Ok(string) -> {
+//       let Ok(port) = int.parse(string)
+//       port
+//     }
+//   }
+// }
 
-pub fn parse_header_line(line: String) -> Result(HeaderLine, Nil) {
-  let tuple(line, Ok("")) = midas_utils.split_on(line, "\r\n")
-  case line {
-    "" -> Ok(EndOfHeaders)
-    _ -> {
-      let tuple(key, Ok(value)) = midas_utils.split_on(line, ": ")
-      Ok(Header(tuple(string.lowercase(key), value)))
-    }
+
+fn do_split_segments(segments_string, accumulator) {
+  let tuple(segment, tail) = midas_utils.split_on(segments_string, "/")
+  let accumulator = case segment {
+    "" -> accumulator
+    segment -> [segment, ..accumulator]
+  }
+
+  case tail {
+    Ok(remaining) -> do_split_segments(remaining, accumulator)
+    Error(Nil) -> list.reverse(accumulator)
   }
 }
+
+pub fn split_segments(path) {
+  let tuple("", tail) = midas_utils.split_on(path, "/")
+  case tail {
+    Ok("") -> []
+    Ok(segments_string) -> do_split_segments(segments_string, [])
+  }
+}
+
+pub external fn parse_query(String) -> List(tuple(String, String)) = "uri_string" "dissect_query"
+
+// Response

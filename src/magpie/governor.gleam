@@ -1,7 +1,7 @@
 import process/process
 import process/process.{Ref, MonitorType, Process, From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
 import process/supervisor/set_supervisor
-import midas/server
+import magpie/server
 
 // pub type Messages {
 //     DOWN(Ref, MonitorType, BarePid, ExitReason)

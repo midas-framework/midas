@@ -1,12 +1,11 @@
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
 import process/supervisor/set_supervisor
-import midas/governor
+import magpie/server
 
-pub fn spawn_link(server_supervisor) {
+pub fn spawn_link(handler, listen_socket) {
   let sup = set_supervisor.spawn_link(
-    fn() { governor.spawn_link(server_supervisor) },
+    fn() { server.spawn_link(handler, listen_socket) },
   )
-  let _ = set_supervisor.start_child(sup)
   sup
 }

@@ -16,7 +16,7 @@ pub fn read_http_request_known_method_test() {
     let Ok(server_socket) = http.accept(listen_socket)
     let Ok(tuple(method, path, headers)) = http.read_request_head(server_socket, 100)
     expect.equal(method, "GET")
-    expect.equal(path, "/")
+    expect.equal(path, http.AbsPath("/"))
     expect.equal(headers, [])
 }
 
