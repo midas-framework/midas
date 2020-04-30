@@ -43,6 +43,7 @@ fn read_request(socket) {
     _ -> {
       midas_utils.display(content_length)
       let Ok(body) = wire.read_body(socket, content_length, 5000)
+      midas_utils.display(body)
       body
     }
   }
@@ -66,7 +67,9 @@ fn response_to_string(response) {
         let tuple(name, value) = header
         string.concat([buffer, name, ": ", value, "\r\n"])
     })
-    string.concat([response_head, body])
+    let response = string.concat([response_head, body])
+    midas_utils.display(response)
+    response
     // TODO needs to add content length Or does it!, use the set_body function
 }
 
