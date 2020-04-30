@@ -1,7 +1,7 @@
 import net/tcp
 import net/http
 
-import gleam/expect
+import gleam/should
 import midas_utils
 //
 // pub external fn read_http(Socket, Int) -> Result(String, Nil) =
@@ -15,9 +15,9 @@ pub fn read_http_request_known_method_test() {
 
     let Ok(server_socket) = http.accept(listen_socket)
     let Ok(tuple(method, path, headers)) = http.read_request_head(server_socket, 100)
-    expect.equal(method, "GET")
-    expect.equal(path, http.AbsPath("/"))
-    expect.equal(headers, [])
+    should.equal(method, "GET")
+    should.equal(path, http.AbsPath("/"))
+    should.equal(headers, [])
 }
 
 // erlang decode packet doesn't handle patch
@@ -29,7 +29,7 @@ pub fn read_http_request_unknown_method_test() {
 
     let Ok(server_socket) = http.accept(listen_socket)
     let Ok(tuple(method, _path, _headers)) = http.read_request_head(server_socket, 100)
-    expect.equal(method, "PATCH")
+    should.equal(method, "PATCH")
 }
 
 pub fn read_http_request_headers_test() {
@@ -40,7 +40,7 @@ pub fn read_http_request_headers_test() {
 
     let Ok(server_socket) = http.accept(listen_socket)
     let Ok(tuple(_method, _path, headers)) = http.read_request_head(server_socket, 100)
-    expect.equal(headers, [tuple("accept", "text/plain"), tuple("x-foo", "bar")])
+    should.equal(headers, [tuple("accept", "text/plain"), tuple("x-foo", "bar")])
 }
 
 // uri_string:parse("foo://hrllo:8080/?400").

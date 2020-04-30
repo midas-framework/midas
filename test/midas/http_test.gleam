@@ -1,11 +1,11 @@
 import midas/http
-import gleam/expect
+import gleam/should
 
 pub fn parse_segments_test() {
-  expect.equal(http.split_segments("/"), [])
-  expect.equal(http.split_segments( "/foo/bar" ), ["foo", "bar"])
-expect.equal(http.split_segments( "////" ), [])
-expect.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
+  should.equal(http.split_segments("/"), [])
+  should.equal(http.split_segments( "/foo/bar" ), ["foo", "bar"])
+should.equal(http.split_segments( "////" ), [])
+should.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 }
 //
 // pub fn parse_host_test() {
@@ -16,7 +16,7 @@ expect.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 //     path: "/",
 //     body: "",
 //   )
-//   expect.equal(host(request), "e.test")
+//   should.equal(host(request), "e.test")
 //
 //   let request = Request(
 //     method: http.Get,
@@ -25,7 +25,7 @@ expect.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 //     path: "/",
 //     body: "",
 //   )
-//   expect.equal(host(request), "e.test")
+//   should.equal(host(request), "e.test")
 // }s
 //
 // pub fn parse_port_test() {
@@ -36,7 +36,7 @@ expect.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 //     path: "/",
 //     body: "",
 //   )
-//   expect.equal(port(request), 80)
+//   should.equal(port(request), 80)
 //
 //   let request = Request(
 //     method: http.Get,
@@ -45,15 +45,15 @@ expect.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 //     path: "/",
 //     body: "",
 //   )
-//   expect.equal(port(request), 8080)
+//   should.equal(port(request), 8080)
 // }
 
 pub fn parse_query_test() {
-  expect.equal(http.parse_query(""), [])
-  expect.equal(http.parse_query("foo=bar"), [tuple("foo", "bar")])
+  should.equal(http.parse_query(""), [])
+  should.equal(http.parse_query("foo=bar"), [tuple("foo", "bar")])
 }
 
 pub fn header_test() {
-  expect.equal(http.get_header([], "foo"), Error(Nil))
-  expect.equal(http.get_header([tuple("foo", "bar")], "foo"), Ok("bar"))
+  should.equal(http.get_header([], "foo"), Error(Nil))
+  should.equal(http.get_header([tuple("foo", "bar")], "foo"), Ok("bar"))
 }

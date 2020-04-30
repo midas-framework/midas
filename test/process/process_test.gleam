@@ -1,6 +1,6 @@
 import process/process
 import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout}
-import gleam/expect
+import gleam/should
 
 pub external fn unsafe_receive(Wait) -> m =
   "process_native" "do_receive"
@@ -17,7 +17,7 @@ pub fn send_message_test() {
   )
 
   process.send(pid, 5)
-  expect.equal(Ok(Ok(5)), unsafe_receive(Infinity))
+  should.equal(Ok(Ok(5)), unsafe_receive(Infinity))
 }
 
 pub fn receive_timeout_test() {
@@ -31,8 +31,8 @@ pub fn receive_timeout_test() {
     },
   )
 
-  expect.equal(Error(Timeout), unsafe_receive(Milliseconds(0)))
-  expect.equal(Ok(Error(Timeout)), unsafe_receive(Infinity))
+  should.equal(Error(Timeout), unsafe_receive(Milliseconds(0)))
+  should.equal(Ok(Error(Timeout)), unsafe_receive(Infinity))
 }
 
 pub fn reference_to_self_test() {
@@ -46,8 +46,8 @@ pub fn reference_to_self_test() {
     },
   )
 
-  expect.equal(Ok(pid), unsafe_receive(Infinity))
-  expect.equal(Ok(pid), unsafe_receive(Infinity))
+  should.equal(Ok(pid), unsafe_receive(Infinity))
+  should.equal(Ok(pid), unsafe_receive(Infinity))
 }
 
 pub type Exit {
@@ -78,7 +78,7 @@ pub fn kill_process_test() {
   let Ok(Exit(_down_pid, reason)) = response
   // Need to sort out kill and killed.
   // All other exit reasons are the same on both sides.
-  expect.equal(reason, process.Killed)
+  should.equal(reason, process.Killed)
 }
 
 pub type Down {
@@ -92,8 +92,8 @@ pub fn monitor_test() {
   let Ok(
     Down(down_reference, Process, down_pid, Normal),
   ) = unsafe_receive(Infinity)
-  expect.equal(monitor_reference, down_reference)
-  expect.equal(process.bare(pid), down_pid)
+  should.equal(monitor_reference, down_reference)
+  should.equal(process.bare(pid), down_pid)
 }
 
 // Needs to start a process trapping exits
@@ -102,8 +102,8 @@ pub fn monitor_test() {
 //
 //     let monitor_reference = process.monitor(Process, pid)
 //     let Ok(Down(down_reference, Process, down_pid, Shutdown)) = unsafe_receive(Infinity)
-//     expect.equal(monitor_reference, down_reference)
-//     expect.equal(process.bare(pid), down_pid)
+//     should.equal(monitor_reference, down_reference)
+//     should.equal(process.bare(pid), down_pid)
 // }
 pub fn demonitor_flush_test() {
   let pid = process.spawn_link(fn(_) { Normal })
@@ -128,7 +128,7 @@ pub fn call_task_test() {
   )
 
   let reply = process.call(pid, Ping(_, 7), Milliseconds(100))
-  expect.equal(reply, Ok(7))
+  should.equal(reply, Ok(7))
 }
 
 pub fn call_timeout_for_slow_process_test() {
@@ -142,7 +142,7 @@ pub fn call_timeout_for_slow_process_test() {
   )
   let reply = process.call(pid, Ping(_, 500), Milliseconds(100))
 
-  expect.equal(reply, Error(Timeout))
+  should.equal(reply, Error(Timeout))
 }
 
 pub fn call_error_for_down_process_test() {
@@ -151,5 +151,5 @@ pub fn call_error_for_down_process_test() {
 
   // TODO handle this there is no concept of down
   // Gone(ExitReason)/Slow
-  expect.equal(reply, Error(Timeout))
+  should.equal(reply, Error(Timeout))
 }

@@ -58,23 +58,15 @@ fn read_request(socket) {
   )
 }
 
-import gleam/iodata
-
-pub fn concat(strings: List(String)) -> String {
-  strings
-  |> iodata.from_strings
-  |> iodata.to_string
-}
-
 // completely ignore reson phrases
 fn response_to_string(response) {
     let http.Response(status: status, headers: headers, body: body) = response
-    let status_line = concat( ["HTTP/1.1 ", int.to_string(status), " \r\n"], )
+    let status_line = string.concat( ["HTTP/1.1 ", int.to_string(status), " \r\n"], )
     let response_head = list.fold(headers, status_line, fn(header, buffer) {
         let tuple(name, value) = header
-        concat([buffer, name, ": ", value, "\r\n"])
+        string.concat([buffer, name, ": ", value, "\r\n"])
     })
-    concat([response_head, body])
+    string.concat([response_head, body])
     // TODO needs to add content length Or does it!, use the set_body function
 }
 
