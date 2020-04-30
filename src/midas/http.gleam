@@ -38,16 +38,8 @@ pub type Response {
 
 // Headers
 
-fn match_key(pair, search) {
-  let tuple(key, _value) = pair
-  key == search
-}
-
 pub fn get_header(headers, key) {
-  case list.filter(headers, match_key(_, key)) {
-    [] -> Error(Nil)
-    [tuple(_key, value)] -> Ok(value)
-  }
+    list.key_find(headers, key)
 }
 
 // Request
