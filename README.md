@@ -22,32 +22,34 @@ _Gleam is a young language so midas comes with postgresql client library, config
 
 ```rust
 import midas/http
-import midas/http.{Request, Response, GET, POST}
+import midas/http.{Request, Response, Get, Post}
 
 pub fn handle_request(request) {
   let Request(method: method, path: path, query: query, body: body ..) = request
   let segments = http.split_segments(path)
-  let params = http.parse_query(query)
+  let params = http.parse_query(result.unwrap(query, ""))
 
-  case tuple(method, http.path_segments(path)) {
-    tuple(GET, []) -> {
+  case tuple(method, segments) {
+    tuple(Get, []) -> {
       let name = params
         |> list.key_find("name")
         |> result.unwrap("World")
 
       Response(
         status: 200,
-        headers: [tuple("content-type", "text/plain")]
+        headers: [tuple("content-type", "text/plain")],
         body: string.concat(["Hello, ", name, "!"])
       )
     }
 
-    tuple(GET, ["posts", id]) -> {
+    tuple(Get, ["posts", id]) -> {
       // Action to get a post by id
+      todo
     }
 
-    tuple(POST, ["posts"]) -> {
+    tuple(Post, ["posts"]) -> {
       // Action to create a post
+      todo
     }
 
     _ -> Response(
