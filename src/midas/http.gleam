@@ -27,7 +27,7 @@ pub type Request {
     path: String,
     query: Option(String),
     authority: String,
-    headers:  List(tuple(String, String)),
+    headers: List(tuple(String, String)),
     body: String,
   )
 }
@@ -37,13 +37,11 @@ pub type Response {
 }
 
 // Headers
-
 pub fn get_header(headers, key) {
-    list.key_find(headers, key)
+  list.key_find(headers, key)
 }
 
 // Request
-
 // I hardly use these
 // pub fn host(request: Request) -> String {
 //   let Request(authority: authority, ..) = request
@@ -63,8 +61,6 @@ pub fn get_header(headers, key) {
 //     }
 //   }
 // }
-
-
 fn do_split_segments(segments_string, accumulator) {
   let tuple(segment, tail) = midas_utils.split_on(segments_string, "/")
   let accumulator = case segment {
@@ -86,6 +82,6 @@ pub fn split_segments(path) {
   }
 }
 
-pub external fn parse_query(String) -> List(tuple(String, String)) = "uri_string" "dissect_query"
-
+pub external fn parse_query(String) -> List(tuple(String, String)) =
+  "uri_string" "dissect_query"
 // Response

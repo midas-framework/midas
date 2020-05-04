@@ -5,7 +5,6 @@ import gleam/string
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
 import midas_utils
-
 import midas/http
 import net/http as wire
 
@@ -27,7 +26,9 @@ fn parse_method(method_string) -> Result(http.Method, Nil) {
 // TODO reanme supervisor -> endpoint
 fn read_request(socket) {
   // TODO https://erlang.org/doc/man/timer.html#exit_after-2
-  let Ok(tuple(method_string, wire.AbsPath(raw_path), raw_headers)) = wire.read_request_head(socket, 1000)
+  let Ok(
+    tuple(method_string, wire.AbsPath(raw_path), raw_headers),
+  ) = wire.read_request_head(socket, 1000)
   let Ok(method) = parse_method(method_string)
   let tuple(path, query_string) = midas_utils.split_on(raw_path, "?")
 
@@ -61,17 +62,21 @@ fn read_request(socket) {
 
 // completely ignore reson phrases
 fn response_to_string(response) {
-    let http.Response(status: status, headers: headers, body: body) = response
-    let status_line = string.concat( ["HTTP/1.1 ", int.to_string(status), " \r\n"], )
-    let response_head = list.fold(headers, status_line, fn(header, buffer) {
-        let tuple(name, value) = header
-        string.concat([buffer, name, ": ", value, "\r\n"])
-    })
-    let response = string.concat([response_head, "\r\n", body])
-    response
-    // TODO needs to add content length Or does it!, use the set_body function
+  let http.Response(status: status, headers: headers, body: body) = response
+  let status_line = string.concat(["HTTP/1.1 ", int.to_string(status), " \r\n"])
+  let response_head = list.fold(
+    headers,
+    status_line,
+    fn(header, buffer) {
+      let tuple(name, value) = header
+      string.concat([buffer, name, ": ", value, "\r\n"])
+    },
+  )
+  let response = string.concat([response_head, "\r\n", body])
+  response
 }
 
+// TODO needs to add content length Or does it!, use the set_body function
 pub type Accept {
   Accept(From(Nil))
 }

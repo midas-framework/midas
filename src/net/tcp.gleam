@@ -7,10 +7,10 @@ external type Charlist
 external fn binary_to_list(String) -> Charlist =
   "erlang" "binary_to_list"
 
- type InetOpts {
-     Binary
-     Active(Bool)
- }
+type InetOpts {
+  Binary
+  Active(Bool)
+}
 
 // TODO List of Options
 external fn do_connect(Charlist, Int, List(InetOpts)) -> Result(Socket, Nil) =

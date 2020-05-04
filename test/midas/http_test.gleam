@@ -3,10 +3,11 @@ import gleam/should
 
 pub fn parse_segments_test() {
   should.equal(http.split_segments("/"), [])
-  should.equal(http.split_segments( "/foo/bar" ), ["foo", "bar"])
-should.equal(http.split_segments( "////" ), [])
-should.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
+  should.equal(http.split_segments("/foo/bar"), ["foo", "bar"])
+  should.equal(http.split_segments("////"), [])
+  should.equal(http.split_segments("/foo//bar"), ["foo", "bar"])
 }
+
 //
 // pub fn parse_host_test() {
 //   let [tuple("foo", "bar")] = Request(
@@ -47,7 +48,6 @@ should.equal(http.split_segments( "/foo//bar" ), ["foo", "bar"])
 //   )
 //   should.equal(port(request), 8080)
 // }
-
 pub fn parse_query_test() {
   should.equal(http.parse_query(""), [])
   should.equal(http.parse_query("foo=bar"), [tuple("foo", "bar")])
