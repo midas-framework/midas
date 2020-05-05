@@ -1,3 +1,5 @@
+import gleam/result.{Option}
+
 pub type Wait {
   Infinity
   Milliseconds(Int)
@@ -5,9 +7,9 @@ pub type Wait {
 
 // Need a type of Timeout that is equivalent to Option
 // Can't be defined in 0.7 TODO move to master
-pub type Timeout {
-  Timeout
-}
+// pub type Timeout {
+//   Timeout
+// }
 
 // WORKING WITH PROCESSES
 pub type Pid(m) {
@@ -22,8 +24,10 @@ pub type ExitReason {
 
 // https://erlang.org/doc/reference_manual/errors.html#exit_reasons
 // Other types e.g. BadArith(Stack) can all be enumerated here.
+
+// receive can only fail due to timeout so option is an acceptable response type
 type Receive(m) =
-  fn(Wait) -> Result(m, Timeout)
+  fn(Wait) -> Option(m)
 
 type Run(m) =
   fn(Receive(m)) -> ExitReason
@@ -113,18 +117,19 @@ pub type From(r) {
 // Need error because process could have terminated
 // needs to be separate receive fn because we want to ignore exits and motiors from other pids
 // Might be more expressive to "Gone/Slow", I can't have a separate Type that includes a Timout Branch
-pub external fn receive_reply(Ref, Wait) -> Result(r, Timeout) =
+pub type CallError {
+        Timeout // Slow
+        Gone    // Gone(ExitReason) To not conflict with Down types
+    }
+
+pub external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
   "process_native" "receive_reply"
 
-// pub type CallError {
-//     Timeout // Slow
-//     Down    // Down(ExitReason)
-// }
 pub fn call(
   pid: Pid(m),
   constructor: fn(From(r)) -> m,
   wait: Wait,
-) -> Result(r, Timeout) {
+) -> Result(r, CallError) {
   let reference = monitor_process(pid)
   let from = From(reference, unsafe_self())
   let _message = send(pid, constructor(from))

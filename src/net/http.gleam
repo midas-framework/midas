@@ -38,9 +38,7 @@ type HttpPacket {
 }
 
 fn read_packet(socket, timeout) {
-  let p = recv(socket, 0, timeout)
-  midas_utils.display(p)
-  p
+  recv(socket, 0, timeout)
 }
 
 // Decode packet turns some methods/header fields into atoms

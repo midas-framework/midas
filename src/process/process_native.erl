@@ -20,7 +20,7 @@ do_receive(Wait) ->
         Message ->
             {ok, Message}
     after Wait ->
-         {error, timeout}
+         {error, nil}
     end.
 
 identity(X) -> X.
@@ -37,7 +37,7 @@ receive_reply(Ref, Wait) ->
           erlang:demonitor(Ref, [flush]),
           {ok, Message};
       {'DOWN', Ref, process, _Pid2, _Reason} ->
-          {error, down}
+          {error, gone}
   after Wait ->
       erlang:demonitor(Ref, [flush]),
       {error, timeout}

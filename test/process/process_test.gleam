@@ -1,8 +1,9 @@
+import gleam/result.{Option}
 import process/process
-import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout}
+import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
 import gleam/should
 
-pub external fn unsafe_receive(Wait) -> m =
+pub external fn unsafe_receive(Wait) -> Option(m) =
   "process_native" "do_receive"
 
 pub fn send_message_test() {
@@ -31,8 +32,8 @@ pub fn receive_timeout_test() {
     },
   )
 
-  should.equal(Error(Timeout), unsafe_receive(Milliseconds(0)))
-  should.equal(Ok(Error(Timeout)), unsafe_receive(Infinity))
+  should.equal(Error(Nil), unsafe_receive(Milliseconds(0)))
+  should.equal(Ok(Error(Nil)), unsafe_receive(Infinity))
 }
 
 pub fn reference_to_self_test() {
@@ -110,7 +111,7 @@ pub fn demonitor_flush_test() {
 
   let monitor_reference = process.monitor(Process, pid)
   let True = process.demonitor(monitor_reference, [Flush])
-  let Error(Timeout) = unsafe_receive(Milliseconds(100))
+  let Error(Nil) = unsafe_receive(Milliseconds(100))
   Nil
 }
 
@@ -151,5 +152,5 @@ pub fn call_error_for_down_process_test() {
 
   // TODO handle this there is no concept of down
   // Gone(ExitReason)/Slow
-  should.equal(reply, Error(Timeout))
+  should.equal(reply, Error(Gone))
 }

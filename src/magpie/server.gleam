@@ -42,9 +42,7 @@ fn read_request(socket) {
   let body = case content_length {
     0 -> ""
     _ -> {
-      midas_utils.display(content_length)
       let Ok(body) = wire.read_body(socket, content_length, 5000)
-      midas_utils.display(body)
       body
     }
   }
