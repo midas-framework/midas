@@ -36,6 +36,10 @@ pub fn parse_only_host_test() {
   should.equal(parsed.fragment, Error(Nil))
 }
 
+pub fn error_parsing_uri_test() {
+  should.equal(uri.parse("::"), Error(Nil))
+}
+
 pub fn full_uri_to_string_test() {
   let test_uri = uri.Uri(
     Ok("https"),
