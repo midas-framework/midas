@@ -29,8 +29,8 @@ pub fn handle_request(request) {
   let segments = http.split_segments(path)
   let params = http.parse_query(result.unwrap(query, ""))
 
-  case tuple(method, segments) {
-    tuple(Get, []) -> {
+  case method, segments {
+    Get, [] -> {
       let name = params
         |> list.key_find("name")
         |> result.unwrap("World")
@@ -42,17 +42,17 @@ pub fn handle_request(request) {
       )
     }
 
-    tuple(Get, ["posts", id]) -> {
+    Get, ["posts", id] -> {
       // Action to get a post by id
       todo
     }
 
-    tuple(Post, ["posts"]) -> {
+    Post, ["posts"] -> {
       // Action to create a post
       todo
     }
 
-    _ -> Response(
+    _, _ -> Response(
       status: 404,
       headers: [tuple("content-type", "text/plain")],
       body: "Nothing here."
