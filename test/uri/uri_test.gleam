@@ -79,6 +79,10 @@ pub fn parse_empty_query_string_test() {
   should.equal(parsed, [])
 }
 
+pub fn error_parsing_query_test() {
+    should.equal(uri.parse_query("%C2"), Error(Nil))
+}
+
 pub fn query_to_string_test() {
   let query_string = uri.query_to_string(
     [tuple("foo bar", "1"), tuple("city", "örebro")],

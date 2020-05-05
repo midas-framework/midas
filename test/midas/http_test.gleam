@@ -49,8 +49,8 @@ pub fn parse_segments_test() {
 //   should.equal(port(request), 8080)
 // }
 pub fn parse_query_test() {
-  should.equal(http.parse_query(""), [])
-  should.equal(http.parse_query("foo=bar"), [tuple("foo", "bar")])
+  should.equal(http.parse_query(""), Ok([]))
+  should.equal(http.parse_query("foo=bar"), Ok([tuple("foo", "bar")]))
 }
 
 pub fn header_test() {

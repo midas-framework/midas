@@ -1,5 +1,7 @@
 import gleam/list
 import gleam/result.{Option}
+
+import uri/uri
 import midas_utils
 
 // All these functions assume socket is reading one line at a time.
@@ -61,6 +63,8 @@ pub fn get_header(headers, key) {
 //     }
 //   }
 // }
+
+// Could move to Uri module, same for host vs port, or match how erlang uri string works and replace authority with host port/ question of setting default port or having it optional.
 fn do_split_segments(segments_string, accumulator) {
   let tuple(segment, tail) = midas_utils.split_on(segments_string, "/")
   let accumulator = case segment {
@@ -82,6 +86,10 @@ pub fn split_segments(path) {
   }
 }
 
-pub external fn parse_query(String) -> List(tuple(String, String)) =
-  "uri_string" "dissect_query"
+// pub import uri/uri.{parse_query}
+pub fn parse_query(string) {
+    uri.parse_query(string)
+}
 // Response
+
+// Could happily call these things in a web module in template/example project
