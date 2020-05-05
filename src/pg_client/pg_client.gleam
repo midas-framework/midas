@@ -2,21 +2,23 @@
 import gleam/dynamic.{Dynamic}
 import process/process.{Pid}
 import uri/uri
+import utils/charlist
+import utils/charlist.{Charlist}
 import midas_utils
 
 type PgoOptions {
-  Host(String)
+  Host(Charlist)
   Port(Int)
-  User(String)
-  Password(String)
-  Database(String)
+  User(Charlist)
+  Password(Charlist)
+  Database(Charlist)
 }
 
 // A Map(list_key any) in gleam that reduces writing erlang code could be interestig
 external fn do_start_link(List(PgoOptions)) -> Result(Pid(a), Nil) =
   "pg_client_native" "start_link"
 
-// Could be spawn link, would accept a databaseurl type, 
+// Could be spawn link, would accept a databaseurl type,
 pub fn start_link(database_url) {
   case uri.parse(database_url) {
     Ok(
@@ -33,11 +35,11 @@ pub fn start_link(database_url) {
       tuple(user, Ok(password)) -> case midas_utils.split_on(path, "/") {
         tuple("", Ok(database)) -> {
           let options = [
-              Host(host),
+              Host(charlist.binary_to_list(host)),
               Port(port),
-              User(user),
-              Password(password),
-              Database(database),
+              User(charlist.binary_to_list(user)),
+              Password(charlist.binary_to_list(password)),
+              Database(charlist.binary_to_list(database)),
             ]
           do_start_link(options)
         }

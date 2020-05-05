@@ -10,7 +10,6 @@ pub type Wait {
 // pub type Timeout {
 //   Timeout
 // }
-
 // WORKING WITH PROCESSES
 pub type Pid(m) {
   Pid(Pid(m))
@@ -24,7 +23,6 @@ pub type ExitReason {
 
 // https://erlang.org/doc/reference_manual/errors.html#exit_reasons
 // Other types e.g. BadArith(Stack) can all be enumerated here.
-
 // receive can only fail due to timeout so option is an acceptable response type
 type Receive(m) =
   fn(Wait) -> Option(m)
@@ -118,10 +116,12 @@ pub type From(r) {
 // needs to be separate receive fn because we want to ignore exits and motiors from other pids
 // Might be more expressive to "Gone/Slow", I can't have a separate Type that includes a Timout Branch
 pub type CallError {
-        Timeout // Slow
-        Gone    // Gone(ExitReason) To not conflict with Down types
-    }
+  Timeout
+  // Slow
+  Gone
+}
 
+// Gone(ExitReason) To not conflict with Down types
 pub external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
   "process_native" "receive_reply"
 

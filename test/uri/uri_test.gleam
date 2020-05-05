@@ -80,7 +80,7 @@ pub fn parse_empty_query_string_test() {
 }
 
 pub fn error_parsing_query_test() {
-    should.equal(uri.parse_query("%C2"), Error(Nil))
+  should.equal(uri.parse_query("%C2"), Error(Nil))
 }
 
 pub fn query_to_string_test() {

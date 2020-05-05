@@ -2,7 +2,7 @@
 -export ([start_link/1, query/2]).
 
 start_link(OptionsList) ->
-  Options = maps:from_list([ {K, erlang:binary_to_list(V)} || {K, V} <- OptionsList]),
+  Options = maps:from_list(OptionsList),
   pgo_pool:start_link(default, Options).
 
 
