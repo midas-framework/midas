@@ -104,9 +104,74 @@ ChildSpecs = [
 ],
 ```
 
+## Tasks
+
+- in a shell there is `r3:compile()` that should recompile source.
+- start a shell with `--start-clean` to start no application and run task.
+- can run eval "erl code" in release, a way of doing tasks
+- task.sh
+
+```
+rel start
+rel eval "myapp:"
+```
+
 ## Development
 
 This project is to validate the value of [Gleam](https://github.com/gleam-lang/gleam) as a language for web development. Currently I am investigating the shape of such a project and not filling in the details, top priorities are as follows.
 
 - Process model: how to handle supervision? Should this be in Gleam, or erlang?
 - Language features/Libraries: How ergnomic is Gleam for the whole process of making web applications in particular templating, using a database.
+
+### Thoughts on processes
+
+**These notes are not relevant to understanding Midas as a server or framework. The process code should eventually be extracted from this repo.**
+
+Supervisors should not accept start functions that fail.
+
+One thing that can cause failures is naming processes.
+This is a big global state problem and probably could always happen,
+but at the registered process level a naming failure should be a hard crash.
+
+Potential an Ignore response is ok, for example not starting a server if the PORT is not set.
+There is no reason the supervisor can't handle this but it might be a nicer grouping of logic to put this in the particular process.
+This is similar to the logic that lead to child_specs
+
+Having the init and init_ack functionality causes alot of delay and the supervisor has to watch for more race conditions.
+
+config typed properly
+
+```rust
+let Ok(pid) = postgresql.start_client(database_url: String)
+
+// Replace that unsafe start API with two step process
+// 1. outside supervision tree
+let Ok(db_config) = postgresql.parse_url(database_url: String)
+
+// 2.
+let pid = postgresql.start_client(db_config)
+```
+
+There are some good discussion on this around,
+need to look for more on less things being required at startup.
+users of the pg_client are better of reporting the errors.
+
+##### Request handlers
+
+These are tasks not "actors", they shouldn't have an open inbox but deal in gen:replies promises.
+
+Super general inbox setup
+
+```rust
+let tuple(receive, resolve) = promise.new()
+
+process.spawn(fn(){
+  resolve(5)
+})
+
+let Ok(value) = receive(Infinity)
+```
+
+A sendable trait could be really useful here.
+
+### Resources http://joeduffyblog.com/2015/11/19/asynchronous-everything/

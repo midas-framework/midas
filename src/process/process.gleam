@@ -43,6 +43,9 @@ pub fn self(_: Receive(m)) -> Pid(m) {
   unsafe_self()
 }
 
+// Start a run function with a reference to the type of error messages that the parent process can accept.
+// fn (run: fn() -> a, wrap_exit: fn(a) -> Message(parent)) Needs to be in process library that the specific message mapped to will be exit.
+
 // This can be typed because an untyped pid is only the result of a DOWN or EXIT Message
 // TODO make exit reason Killed and have a special fn for kill
 pub external fn exit(Pid(m), ExitReason) -> Bool =
