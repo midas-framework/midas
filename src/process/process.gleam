@@ -1,20 +1,104 @@
+//// Working with typed processes in Gleam.
+////
+//// This module allows you to:
+//// - spawn processes
+//// - send and receive messages
+//// - call processes, send a message and expect a reply.
+//// - monitor processes
+//// - link to processes
+//// - supervise processes with the `set_supervisor` and `rest_for_one`
+////
+//// *This module is being developed concurrently with the Midas web framework.
+//// It will be extracted before Midas reaches 1.0.
+//// Help with this module is greatly appreciated.*
+////
+//// You will need these imports for the examples to work
+////
+////    import process/process
+////    import process/process.{Normal, Infinity, From}
+////
+//// ## Starting and stopping processes
+////
+//// A process is started using `process.spawn_link/1`.
+//// The single argument is a function that accepts a receive call and returns an `ExitReason`.
+////
+//// This is an example of the simplest process that immediately exits with reason `Normal`
+////
+////    let pid = process.spawn_link(fn(_receive) {
+////        Normal
+////    })
+////
+//// ## Sending and receiving messages
+////
+//// Here is a simple process that sums all the numbers sent to it.
+////
+////    fn loop(receive, state) {
+////      let value = receive(Infinity)
+////      loop(receive, state + value)
+////    }
+////
+////    let pid = process.spawn_link(loop(_, 0))
+////
+////    process.send(pid, 1)
+////    process.send(pid, 2)
+////
+//// By recursively calling loop this function runs forever.
+//// The type of the receive function is parameters by the type of messages it accepts.
+////
+//// Because gleam infers the type of value to be an Int it is known that only integers can be sent to this pid.
+//// The following call will not be allowed by the type checker.
+////
+////    process.send(pid, "0")
+////
+//// Normally a process will accept more message types than an Int,
+//// This is handled by defining a single type with a constructor for each expected message type.
+////
+//// ## Calling a process
+////
+//// Send a message to a process an await a reply.
+////
+////    type Messages {
+////      Reverse(From(String), String)
+////    }
+////
+////    fn loop(receive) {
+////      let Reverse(from, str) = receive(Infinity)
+////      process.reply(from, string.reverse(str))
+////      loop(receive)
+////    }
+////
+////    let pid = process.spawn_link(loop(_))
+////
+////    let Ok(reversed) = process.call(pid, Reverse(_, "hello"))
+////
+//// The `Reverse` message type includes a from reference that says callers accept a `String` type as a response.
+//// Receiving this message works the same way as before, but now we have a from value that we can send a reply to.
+//// Sending a call message uses `process.call/2`.
+//// The first argument is a Pid.
+//// The second argument is a function that takes a from reference and creates a message.
+////
+//// Having a constructor for the sent message allows the process library to create a from value.
+//// Doing this allows the calling process to receive replies without having to specify them as part of their message contract.
+//// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
+
+
 import gleam/result.{Option}
 
+/// A value in milliseconds or infinity.
 pub type Wait {
   Infinity
   Milliseconds(Int)
 }
 
-// Need a type of Timeout that is equivalent to Option
-// Can't be defined in 0.7 TODO move to master
-// pub type Timeout {
-//   Timeout
-// }
 // WORKING WITH PROCESSES
-pub type Pid(m) {
-  Pid(Pid(m))
-}
 
+/// Identifier for a process
+/// This type is parameterised by the message type acceptable to that process.
+pub external type Pid(m)
+
+/// Reason for a process to terminate.
+///
+/// In most cases `Normal` is the correct value to return from a process's run function.
 pub type ExitReason {
   Normal
   Kill
@@ -70,17 +154,18 @@ pub external fn exit(Pid(m), ExitReason) -> Bool =
 // Then a Down message can just be treated as a promise for the result of the computation
 // erlang:is_process_alive
 // WORKING WITH UNTYPED PROCESSES
-pub type BarePid {
-  BarePid(BarePid)
-}
 
+/// A Pid that is not parameterised by the messages it can receive.
+/// Bare Pids are useful when you receive a Pid from a DOWN or EXIT message.
+/// They can also be used to check equality between two pids.
+pub external type BarePid
+
+/// Create a `BarePid` from a `Pid(m)`
 pub external fn bare(Pid(a)) -> BarePid =
   "process_native" "identity"
 
 // WORKING WITH MONITORS AND REFERENCES
-pub type Ref {
-  Ref(Ref)
-}
+pub external type Ref
 
 pub type MonitorType {
   Process

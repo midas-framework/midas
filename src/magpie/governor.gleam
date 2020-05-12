@@ -1,5 +1,5 @@
 import process/process
-import process/process.{Ref, MonitorType, Process, From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{Ref, From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
 import process/supervisor/set_supervisor
 import magpie/server
 
