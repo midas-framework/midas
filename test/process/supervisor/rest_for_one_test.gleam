@@ -17,7 +17,7 @@ pub fn start_up_order_test() {
             fn(receive) {
               process.send(test, process.self(receive))
               let _ = receive(Infinity)
-              Normal
+              Nil
             },
           )
         },
@@ -27,7 +27,7 @@ pub fn start_up_order_test() {
               process.send(test, first)
               process.send(test, process.self(receive))
               let _ = receive(Infinity)
-              Normal
+              Nil
             },
           )
         },

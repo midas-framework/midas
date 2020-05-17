@@ -1,6 +1,6 @@
 import gleam/result
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
 import magpie/supervisor
 import midas/http.{Request, Response}
 

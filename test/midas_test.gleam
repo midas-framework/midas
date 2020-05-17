@@ -19,7 +19,7 @@ pub fn echo_body_test() {
   midas.spawn_link(handle_request, 10001)
 
   let Ok(socket) = tcp.connect("localhost", 10001)
-  tcp.send(
+  let Ok(_) = tcp.send(
     socket,
     "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-length: 14\r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
   )
@@ -30,7 +30,7 @@ pub fn echo_body_test() {
   )
 
   let Ok(socket) = tcp.connect("localhost", 10001)
-  tcp.send(
+  let Ok(_) = tcp.send(
     socket,
     "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n",
   )

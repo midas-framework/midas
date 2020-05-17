@@ -3,10 +3,9 @@
 
 spawn_link(Run) ->
   erlang:spawn_link(fun () ->
-      Return = Run(fun (Wait) ->
+      Run(fun (Wait) ->
           do_receive(Wait)
-      end),
-      erlang:exit(Return)
+      end)
   end).
 
 do_receive({milliseconds, Milliseconds}) ->

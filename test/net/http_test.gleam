@@ -10,7 +10,7 @@ pub fn read_http_request_known_method_test() {
   let Ok(listen_socket) = http.listen(9000)
 
   let Ok(socket) = tcp.connect("localhost", 9000)
-  tcp.send(socket, "GET / HTTP/1.1\r\n\r\n")
+  let Ok(_) = tcp.send(socket, "GET / HTTP/1.1\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
   let Ok(
@@ -26,7 +26,7 @@ pub fn read_http_request_unknown_method_test() {
   let Ok(listen_socket) = http.listen(9001)
 
   let Ok(socket) = tcp.connect("localhost", 9001)
-  tcp.send(socket, "PATCH / HTTP/1.1\r\n\r\n")
+  let Ok(_) = tcp.send(socket, "PATCH / HTTP/1.1\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
   let Ok(
@@ -39,7 +39,7 @@ pub fn read_http_request_headers_test() {
   let Ok(listen_socket) = http.listen(9002)
 
   let Ok(socket) = tcp.connect("localhost", 9002)
-  tcp.send(socket, "GET / HTTP/1.1\r\naccept: text/plain\r\nx-foo: bar\r\n\r\n")
+  let Ok(_) = tcp.send(socket, "GET / HTTP/1.1\r\naccept: text/plain\r\nx-foo: bar\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
   let Ok(
