@@ -86,7 +86,7 @@ fn run(receive, handler, listen_socket) {
   let Ok(request) = read_request(socket)
   let response = handler(request)
   let Ok(Nil) = wire.send(socket, response_to_string(response))
-  Ok(Nil)
+  Nil
 }
 
 pub fn spawn_link(handler, listen_socket) {
