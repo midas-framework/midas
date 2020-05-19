@@ -6,6 +6,7 @@ import magpie/governor
 pub fn spawn_link(server_supervisor) {
   let sup = set_supervisor.spawn_link(
     fn() { governor.spawn_link(server_supervisor) },
+    // run: fn() { Permanent(governor.init(_, server_supervisor)) }
   )
   let _ = set_supervisor.start_child(sup)
   sup

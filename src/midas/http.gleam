@@ -33,6 +33,78 @@ pub type Request {
   )
 }
 
+pub type Message(t, b) {
+  Message(t, List(tuple(String, String)), b)
+}
+
+pub fn response(status: Int) {
+  Message(status, [], Nil)
+}
+
+pub fn set_body(message: Message(t, Nil), body) {
+  let Message(start_line, headers, Nil) = message
+  // TODO add content-length
+  Message(start_line, headers, body)
+}
+pub fn stuff() {
+  response(200)
+  |> set_body("help", iolist.byte_size)
+  |> set_body("help", string.byte_size)
+}
+
+// Startup without Error,
+// What do you do in the start link function.
+// No names.
+
+// gleam/uri make case for standard lib
+// gleam/http less likely standard lib but will work on client + server
+// Write Readme for both, requires extra pages in docs to be supported.
+// uri.split_segments split on slash and then remove empty strings
+// http.get_form works on body of type iolist
+// http.set_form sets iolist
+// http.get_query returns empty list if no query string but Error(ParseError) is still possible
+// do_sleep returns external type OK but sleep returns nil
+// ExitReason is Normal/Crash/Kill
+// There is no Exit function, only a Kill function
+// supervisor should accept run function
+// I like the return type on Run being Never
+type Child(m) {
+  Permanent(Run(m, Never))
+  Transient(Run(m, Shutdown))
+  Temporary(Run(m, Nil))
+}
+// What does one_for_rest even mean if process stops.
+// returning which_children Live(Pid) | Done(Reason (Never is good cz this should never happen.))
+// process always has to handle case it might be too slow and be killed, or node dies. let's go strait to kill
+
+fn do_loop(receive, loop, state) {
+  do_loop(receive, loop, loop(receive(Infinity, state)))
+}
+
+fn gen_server(init, loop) {
+  fn (receive) {
+    let state = init()
+    do_loop(receive, loop, state)
+  }
+}
+// Return state loop
+
+
+fn loop(message) {
+
+  tuple(loop_two(_, "Foo"), [(Address, message), (from, reply)])
+}
+
+// Don't think the list of messages is doable, could be a send function, and there might be ways to intercept, but we don't have single state value to look at
+
+// If ets is started reference can be returned by a call to the pid in an init step
+// Should write up why No names
+
+// Call should be build on channels.
+
+// Stop asking for permission seems logically consistent see how far it gets.
+// magpie is a good name for client, get's shiny things
+
 pub type Response {
   Response(status: Int, headers: List(tuple(String, String)), body: String)
 }

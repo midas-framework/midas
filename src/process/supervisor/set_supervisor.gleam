@@ -32,6 +32,8 @@ fn loop(receive, start_child, children) {
       process.reply(from, list.reverse(children))
       loop(receive, start_child, children)
     }
+    // TODO shouldn't be restarting servers
+    // Unless do the cheat and map 500 live servers.
     Ok(EXIT(down_pid, _)) -> {
       let predicate = fn(pid) { process.bare(pid) == down_pid }
       let tuple(_found, children) = pop(children, predicate, [])

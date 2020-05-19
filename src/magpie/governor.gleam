@@ -28,6 +28,10 @@ fn init(receive, server_supervisor) {
   loop(receive, server_supervisor)
 }
 
+pub fn child_spec(server_supervisor) {
+  Permanent(run: init(_, server_supervisor))
+}
+
 pub fn spawn_link(server_supervisor) {
   process.spawn_link(init(_, server_supervisor))
 }
