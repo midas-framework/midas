@@ -4,6 +4,16 @@
   This is to give maximum control to implementers of supervisors etc.
   Also this level of abstraction is infrequently changed so well tested libraries can be used.
 
+### Notes from this article
+
+https://arxiv.org/pdf/1611.06276.pdf
+
+- Great clarification of terms. "Nonetheless, we will stick with the popular names, even if it is as inapposite ascomparing TV channels with TV actors"
+- http://hopac.github.io/Hopac/Hopac.html start and start_ignore. Very interesting view of things that appears to be task first.
+  - there is probably a way to use monitors to pass tasks between processes. i.e. process a can get the value and send it to process B, if value not computed then B can monitor and wait for it. termination reason Concluded(value)
+- "type pollution problem" -> This makes sense and is circumvented if not solved by building in the concept of a call + reply. Essentially selective receive impersonates having a channel. Having the sender understand the receivers type can be handled by sending a mapping function in the call message,
+- Stack as the implementation. parameterised in list
+
 ## Comments
 
 #### supervisors notes
