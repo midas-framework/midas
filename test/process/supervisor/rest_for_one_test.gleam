@@ -1,5 +1,5 @@
 import process/process
-import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout}
+import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout}
 import process/supervisor/rest_for_one
 import midas_utils
 import gleam/should
@@ -49,7 +49,7 @@ pub fn start_up_order_test() {
   should.not_equal(child2_from_self, child2_from_self_again)
 
   // Restarts from kill as well as normal exit
-  process.exit(child1_from_self, Kill)
+  process.kill(child1_from_self)
   let Ok(child1_from_self_again) = unsafe_receive(Milliseconds(100))
   let Ok(child1_from_child2_again) = unsafe_receive(Milliseconds(100))
   should.equal(child1_from_self_again, child1_from_child2_again)

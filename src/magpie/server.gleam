@@ -3,7 +3,7 @@ import gleam/int
 import gleam/result
 import gleam/string
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas_utils
 import midas/http
 import net/http as wire

@@ -82,6 +82,7 @@
 //// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
 
 
+import gleam/atom.{Atom}
 import gleam/result.{Option}
 
 /// A value in milliseconds or infinity.
@@ -101,7 +102,8 @@ pub external type Pid(m)
 /// In most cases `Normal` is the correct value to return from a process's run function.
 pub type ExitReason {
   Normal
-  Kill
+  // TODO Add a reference to stacktrace
+  Crashed
   Killed
 }
 
@@ -137,8 +139,12 @@ pub fn self(_: Receive(m)) -> Pid(m) {
 
 // This can be typed because an untyped pid is only the result of a DOWN or EXIT Message
 // TODO make exit reason Killed and have a special fn for kill
-pub external fn exit(Pid(m), ExitReason) -> Bool =
+external fn exit(Pid(m), Atom) -> Bool =
   "erlang" "exit"
+
+pub fn kill(pid: Pid(m)) -> Bool {
+    exit(pid, atom.create_from_string("kill"))
+}
 
 // Add a clause that turned Killed into Kill
 // Or just StopReason
@@ -146,12 +152,12 @@ pub external fn exit(Pid(m), ExitReason) -> Bool =
 //     Kill
 // }
 //
-// external fn kill(Pid(m), Kill) -> Bool
+// external fn kill(Pid(m)) -> Bool
 // = "erlang" "exit"
 //
 // pub fn exit(pid, reason) {
 //     case reason {
-//         Killed -> kill(pid, Kill)
+//         Killed -> kill(pid)
 //         _ -> do_exit(pid, reason)
 //     }
 // }

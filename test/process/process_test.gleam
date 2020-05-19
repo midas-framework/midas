@@ -1,6 +1,6 @@
 import gleam/result.{Option}
 import process/process
-import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
+import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
 import gleam/should
 
 pub external fn unsafe_receive(Wait) -> Option(m) =
@@ -65,7 +65,7 @@ pub fn kill_process_test() {
           Nil
         },
       )
-      process.exit(child, process.Kill)
+      process.kill(child)
       let r = receive(Milliseconds(100))
       process.send(test, r)
     },
