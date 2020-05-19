@@ -1,5 +1,5 @@
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
 import process/supervisor/set_supervisor
 import magpie/governor
 

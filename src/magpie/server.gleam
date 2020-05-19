@@ -3,7 +3,7 @@ import gleam/int
 import gleam/result
 import gleam/string
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
 import midas_utils
 import midas/http
 import net/http as wire
@@ -86,7 +86,7 @@ fn run(receive, handler, listen_socket) {
   let Ok(request) = read_request(socket)
   let response = handler(request)
   let Ok(Nil) = wire.send(socket, response_to_string(response))
-  Normal
+  Nil
 }
 
 pub fn spawn_link(handler, listen_socket) {

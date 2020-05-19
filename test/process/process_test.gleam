@@ -13,7 +13,6 @@ pub fn send_message_test() {
     fn(receive) {
       let r = receive(Milliseconds(100))
       process.send(test, r)
-      Normal
     },
   )
 
@@ -28,7 +27,6 @@ pub fn receive_timeout_test() {
     fn(receive) {
       let r = receive(Milliseconds(100))
       process.send(test, r)
-      Normal
     },
   )
 
@@ -43,7 +41,6 @@ pub fn reference_to_self_test() {
     fn(receive) {
       process.send(test, process.self(receive))
       process.send(test, process.unsafe_self())
-      Normal
     },
   )
 
@@ -65,13 +62,12 @@ pub fn kill_process_test() {
       let child = process.spawn_link(
         fn(r2) {
           let _ = r2(Infinity)
-          Normal
+          Nil
         },
       )
       process.exit(child, process.Kill)
       let r = receive(Milliseconds(100))
       process.send(test, r)
-      Normal
     },
   )
 
@@ -87,7 +83,7 @@ pub type Down {
 }
 
 pub fn monitor_test() {
-  let pid = process.spawn_link(fn(_) { Normal })
+  let pid = process.spawn_link(fn(_) { Nil })
 
   let monitor_reference = process.monitor(Process, pid)
   let Ok(
@@ -107,7 +103,7 @@ pub fn monitor_test() {
 //     should.equal(process.bare(pid), down_pid)
 // }
 pub fn demonitor_flush_test() {
-  let pid = process.spawn_link(fn(_) { Normal })
+  let pid = process.spawn_link(fn(_) { Nil })
 
   let monitor_reference = process.monitor(Process, pid)
   let True = process.demonitor(monitor_reference, [Flush])
@@ -124,7 +120,6 @@ pub fn call_task_test() {
     fn(receive) {
       let Ok(Ping(from, value)) = receive(Infinity)
       process.reply(from, value)
-      Normal
     },
   )
 
@@ -137,8 +132,8 @@ pub fn call_timeout_for_slow_process_test() {
     fn(receive) {
       let _ = receive(Infinity)
       // Receive twice because call sends message for first one
-      let _ = receive(Milliseconds(500))
-      Normal
+      let _ = receive(Infinity)
+      Nil
     },
   )
   let reply = process.call(pid, Ping(_, 500), Milliseconds(100))
@@ -147,7 +142,7 @@ pub fn call_timeout_for_slow_process_test() {
 }
 
 pub fn call_error_for_down_process_test() {
-  let pid = process.spawn_link(fn(_) { Normal })
+  let pid = process.spawn_link(fn(_) { Nil })
   let reply = process.call(pid, Ping(_, 500), Infinity)
 
   // TODO handle this there is no concept of down

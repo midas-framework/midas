@@ -1,7 +1,7 @@
 // Other Possible name: Fleet Clone, Copy, Replica, Homogenious
 import gleam/list
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas_utils
 
 pub type Messages(m) {

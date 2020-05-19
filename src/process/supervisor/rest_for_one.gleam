@@ -1,6 +1,6 @@
 // Names mixed/Team/Group/Individual/myriad/motly
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
 
 pub type ChildSpecs(a, b, c) {
   One(fn() -> Pid(a))
@@ -127,7 +127,7 @@ fn spawn_dummy1(_) {
   process.spawn_link(
     fn(receive) {
       let _ = receive(Infinity)
-      Normal
+      Nil
     },
   )
 }
@@ -136,7 +136,7 @@ fn spawn_dummy2(_, _) {
   process.spawn_link(
     fn(receive) {
       let _ = receive(Infinity)
-      Normal
+      Nil
     },
   )
 }

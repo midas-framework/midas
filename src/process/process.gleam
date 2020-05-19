@@ -111,14 +111,19 @@ pub type ExitReason {
 type Receive(m) =
   fn(Wait) -> Option(m)
 
-type Run(m) =
-  fn(Receive(m)) -> ExitReason
+type Run(m, r) =
+  fn(Receive(m)) -> r
 
-pub external fn spawn_link(Run(m)) -> Pid(m) =
+pub external fn spawn_link(Run(m, r)) -> Pid(m) =
   "process_native" "spawn_link"
 
-pub external fn send(Pid(m), m) -> m =
+external fn do_send(Pid(m), m) -> m =
   "erlang" "send"
+
+pub fn send(pid, message) {
+  do_send(pid, message)
+  Nil
+}
 
 pub external fn unsafe_self() -> Pid(m) =
   "erlang" "self"

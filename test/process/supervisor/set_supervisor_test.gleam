@@ -1,5 +1,5 @@
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Normal, Infinity, Milliseconds}
+import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds}
 import process/supervisor/set_supervisor
 import midas_utils
 import gleam/should
@@ -9,7 +9,7 @@ fn start_child() {
   process.spawn_link(
     fn(receive) {
       let Ok(_) = receive(Infinity)
-      Normal
+      Nil
     },
   )
 }
