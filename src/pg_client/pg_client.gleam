@@ -1,7 +1,7 @@
 // gleam_pg/pg_client
 import gleam/dynamic.{Dynamic}
 import process/process.{Pid}
-import uri/uri
+import gleam/uri
 import utils/charlist
 import utils/charlist.{Charlist}
 import midas_utils

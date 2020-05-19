@@ -1,4 +1,4 @@
--module (uri_native).
+-module (gleam_uri_native).
 -export ([parse/1, to_string/1, parse_query/1, query_to_string/1]).
 
 find_key(Key, Map) ->

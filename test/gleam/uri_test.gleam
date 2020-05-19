@@ -1,4 +1,4 @@
-import uri/uri
+import gleam/uri
 import gleam/should
 
 pub fn full_parse_test() {

@@ -1,6 +1,6 @@
 import gleam/list
 import gleam/result.{Option}
-import uri/uri
+import gleam/uri
 import midas_utils
 
 // All these functions assume socket is reading one line at a time.
