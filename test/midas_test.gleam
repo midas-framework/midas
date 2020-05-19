@@ -1,3 +1,5 @@
+import gleam/uri
+
 import midas
 import midas/http
 import midas/http.{Request, Response, Get}
@@ -7,7 +9,7 @@ import midas_utils
 
 fn handle_request(request) {
   let Request(path: path, headers: headers, body: body, ..) = request
-  case http.split_segments(path) {
+  case uri.path_segments(path) {
     ["echo"] -> {
       let Ok(content_type) = http.get_header(headers, "content-type")
       Response(200, [tuple("content-type", content_type)], body)

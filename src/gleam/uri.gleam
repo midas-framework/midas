@@ -8,7 +8,10 @@
 //// https://www.w3.org/TR/html52/sec-forms.html#urlencoded-form-data
 
 // Path is required in erlang map, for consistency an empty path could be considered Error(Nil), but this might not feel consistent with query/fragments
+import gleam/list
 import gleam/result.{Option}
+// TODO remove if split_on is in core
+import midas_utils
 
 /// Type representing holding the parsed components of an URI.
 /// All components of a URI are optional, except the path.
@@ -45,6 +48,30 @@ pub external fn parse_query(
 /// The opposite operation is `uri.parse_query`.
 pub external fn query_to_string(List(tuple(String, String))) -> String =
   "gleam_uri_native" "query_to_string"
+
+fn do_path_segments(segments_string, accumulator) {
+  let tuple(segment, tail) = midas_utils.split_on(segments_string, "/")
+  let accumulator = case segment, accumulator {
+    "", accumulator -> accumulator
+    ".", accumulator -> accumulator
+    "..", [] -> []
+    "..", [_, ..accumulator] -> accumulator
+    segment, accumulator -> [segment, ..accumulator]
+  }
+
+  case tail {
+    Ok(remaining) -> do_path_segments(remaining, accumulator)
+    Error(Nil) -> list.reverse(accumulator)
+  }
+}
+
+/// Split the path section of a URI into it's constituent segments.
+///
+/// Removes empty segments and resolves dot-segments as specified in
+/// [section 5.2](https://www.ietf.org/rfc/rfc3986.html#section-5.2) of the RFC.
+pub fn path_segments(path) {
+  do_path_segments(path, [])
+}
 
 /// Encode a `Uri` value as a URI string.
 ///

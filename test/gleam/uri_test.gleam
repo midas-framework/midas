@@ -94,3 +94,17 @@ pub fn empty_query_to_string_test() {
   let query_string = uri.query_to_string([])
   should.equal(query_string, "")
 }
+
+pub fn parse_segments_test() {
+  should.equal(uri.path_segments("/"), [])
+  should.equal(uri.path_segments("/foo/bar"), ["foo", "bar"])
+  should.equal(uri.path_segments("////"), [])
+  should.equal(uri.path_segments("/foo//bar"), ["foo", "bar"])
+
+  should.equal(uri.path_segments("/."), [])
+  should.equal(uri.path_segments("/.foo"), [".foo"])
+  
+  should.equal(uri.path_segments("/../bar"), ["bar"])
+  should.equal(uri.path_segments("../bar"), ["bar"])
+  should.equal(uri.path_segments("/foo/../bar"), ["bar"])
+}

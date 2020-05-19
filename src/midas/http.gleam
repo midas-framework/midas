@@ -63,26 +63,7 @@ pub fn get_header(headers, key) {
 //   }
 // }
 // Could move to Uri module, same for host vs port, or match how erlang uri string works and replace authority with host port/ question of setting default port or having it optional.
-fn do_split_segments(segments_string, accumulator) {
-  let tuple(segment, tail) = midas_utils.split_on(segments_string, "/")
-  let accumulator = case segment {
-    "" -> accumulator
-    segment -> [segment, ..accumulator]
-  }
 
-  case tail {
-    Ok(remaining) -> do_split_segments(remaining, accumulator)
-    Error(Nil) -> list.reverse(accumulator)
-  }
-}
-
-pub fn split_segments(path) {
-  let tuple("", tail) = midas_utils.split_on(path, "/")
-  case tail {
-    Ok("") -> []
-    Ok(segments_string) -> do_split_segments(segments_string, [])
-  }
-}
 
 // pub import uri/uri.{parse_query}
 pub fn parse_query(string) {
