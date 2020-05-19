@@ -240,11 +240,14 @@ pub fn reply(from: From(r), message: r) {
   send(pid, tuple(reference, message))
 }
 
-// Proc lib needs a start and init_ack function
-// Will need an external receive ack
-pub type OK {
-  OK(OK)
-}
-
-pub external fn do_sleep(Int) -> OK =
+external fn do_sleep(Int) -> Atom =
   "timer" "sleep"
+
+/// Suspend a process.
+///
+/// The process calling this function is suspended for the number of milliseconds given.
+///
+pub fn sleep(time: Int) -> Nil {
+    do_sleep(time)
+    Nil
+}
