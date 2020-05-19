@@ -15,22 +15,25 @@
 //// You will need these imports for the examples to work
 ////
 ////    import process/process
-////    import process/process.{Normal, Infinity, From}
+////    import process/process.{Infinity, From}
 ////
 //// ## Starting and stopping processes
 ////
 //// A process is started using `process.spawn_link/1`.
-//// The single argument is a function that accepts a receive call and returns an `ExitReason`.
+//// The `spawn_link` function executed the given function in a new process.
 ////
-//// This is an example of the simplest process that immediately exits with reason `Normal`
+//// This is an example of the simplest process that immediately exits.
 ////
 ////    let pid = process.spawn_link(fn(_receive) {
-////        Normal
+////        Nil
 ////    })
 ////
 //// ## Sending and receiving messages
 ////
-//// Here is a simple process that sums all the numbers sent to it.
+//// Messages are sent to a Processes reference `Pid(m)` using `process.send`.
+//// A procees receives these messages using the receive function that was passed as an argument to the run function went it was spawned.
+////
+//// Example a simple process that sums all the numbers sent to it.
 ////
 ////    fn loop(receive, state) {
 ////      let value = receive(Infinity)
@@ -116,20 +119,38 @@ type Receive(m) =
 type Run(m, r) =
   fn(Receive(m)) -> r
 
-pub external fn spawn_link(Run(m, r)) -> Pid(m) =
+/// Start a new process to execute the given function.
+///
+/// The run function, passed to `spawn_link`, will be called with a function that is used to pop messages from the mailbox.
+/// Messages can be sent to the mailbox for this process using `process.send` and the Pid reference returned by `spawn_link`.
+///
+/// When the run function completes the process will stop with a normal exit reason.
+///
+pub external fn spawn_link(run: Run(m, r)) -> Pid(m) =
   "process_native" "spawn_link"
 
 external fn do_send(Pid(m), m) -> m =
   "erlang" "send"
 
+/// Send a message to a process.
+///
+/// Note the message is sent asynchronously and this call returns immediately.
+/// This call **will not** error if the process is not alive or is unresponse.
+/// Use `process.call` to await on a reply from the receiving process.
 pub fn send(pid, message) {
   do_send(pid, message)
   Nil
 }
 
+/// Get a reference to the Pid of the calling process.
+///
+/// The message types accepted by this process is inferred from it's usage.
 pub external fn unsafe_self() -> Pid(m) =
   "erlang" "self"
 
+/// Get a typed reference to the Pid of the calling process.
+///
+/// This function takes the process's receive function as an argument to correctly infer the message type of the Pid.
 pub fn self(_: Receive(m)) -> Pid(m) {
   unsafe_self()
 }
@@ -146,24 +167,6 @@ pub fn kill(pid: Pid(m)) -> Bool {
     exit(pid, atom.create_from_string("kill"))
 }
 
-// Add a clause that turned Killed into Kill
-// Or just StopReason
-// type Kill {
-//     Kill
-// }
-//
-// external fn kill(Pid(m)) -> Bool
-// = "erlang" "exit"
-//
-// pub fn exit(pid, reason) {
-//     case reason {
-//         Killed -> kill(pid)
-//         _ -> do_exit(pid, reason)
-//     }
-// }
-// The return value of a run function should just be the exit reason of a process.
-// Then a Down message can just be treated as a promise for the result of the computation
-// erlang:is_process_alive
 // WORKING WITH UNTYPED PROCESSES
 
 /// A Pid that is not parameterised by the messages it can receive.
@@ -210,20 +213,25 @@ pub type From(r) {
   From(Ref, Pid(tuple(Ref, r)))
 }
 
-// Can check pid is self
-// Need error because process could have terminated
-// needs to be separate receive fn because we want to ignore exits and motiors from other pids
-// Might be more expressive to "Gone/Slow", I can't have a separate Type that includes a Timout Branch
+/// Reasons for a call to fail
+///
+/// A call may fail due to the process being dead, `Gone` or a response not being received in time.
+
+// We should always have {ref, message} on a separate channel for late replies from calls.
 pub type CallError {
   Timeout
-  // Slow
   Gone
 }
 
 // Gone(ExitReason) To not conflict with Down types
-pub external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
+external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
   "process_native" "receive_reply"
 
+/// Make a call to a process
+///
+/// A call is a message sent to a process which the client expect a reply.
+/// This funtion will not return until the response to the call is received or an error is detected.
+///
 pub fn call(
   pid: Pid(m),
   constructor: fn(From(r)) -> m,
@@ -235,6 +243,10 @@ pub fn call(
   receive_reply(reference, wait)
 }
 
+/// Reply to a call.
+///
+/// Send a message in reply to a call from another process.
+/// *See `process.call` for starting a call.
 pub fn reply(from: From(r), message: r) {
   let From(reference, pid) = from
   send(pid, tuple(reference, message))
