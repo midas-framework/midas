@@ -84,7 +84,6 @@
 //// Doing this allows the calling process to receive replies without having to specify them as part of their message contract.
 //// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
 
-
 import gleam/atom.{Atom}
 import gleam/result.{Option}
 
@@ -95,7 +94,6 @@ pub type Wait {
 }
 
 // WORKING WITH PROCESSES
-
 /// Identifier for a process
 /// This type is parameterised by the message type acceptable to that process.
 pub external type Pid(m)
@@ -164,11 +162,10 @@ external fn exit(Pid(m), Atom) -> Bool =
 /// Stop the exection of a process.
 /// The process unconditionally exits with the reason `killed`.
 pub fn kill(pid: Pid(m)) -> Bool {
-    exit(pid, atom.create_from_string("kill"))
+  exit(pid, atom.create_from_string("kill"))
 }
 
 // WORKING WITH UNTYPED PROCESSES
-
 /// A Pid that is not parameterised by the messages it can receive.
 /// Bare Pids are useful when you receive a Pid from a DOWN or EXIT message.
 /// They can also be used to check equality between two pids.
@@ -179,7 +176,6 @@ pub external fn bare(Pid(a)) -> BarePid =
   "process_native" "identity"
 
 // WORKING WITH MONITORS AND REFERENCES
-
 /// A unique reference
 ///
 pub external type Ref
@@ -220,7 +216,6 @@ pub external fn demonitor(Ref, List(DemonitorOptions)) -> Bool =
   "erlang" "demonitor"
 
 // PROCESS FLAGS, WARNING:
-
 /// Options that can be set using `process_flag`
 ///
 /// TrapExit can change the messages expected in a receive function
@@ -236,7 +231,6 @@ pub external fn process_flag(ProcessFlag) -> ProcessFlag =
   "process_native" "process_flag"
 
 // CALL PROCESS
-
 /// Reference to a calling process
 ///
 /// See `call` for how to send a message to a process and await a reply.
@@ -244,11 +238,10 @@ pub type From(r) {
   From(Ref, Pid(tuple(Ref, r)))
 }
 
+// We should always have {ref, message} on a separate channel for late replies from calls.
 /// Reasons for a call to fail
 ///
 /// A call may fail due to the process being dead, `Gone` or a response not being received in time.
-
-// We should always have {ref, message} on a separate channel for late replies from calls.
 pub type CallError {
   Timeout
   Gone
@@ -291,6 +284,6 @@ external fn do_sleep(Int) -> Atom =
 /// The process calling this function is suspended for the number of milliseconds given.
 ///
 pub fn sleep(time: Int) -> Nil {
-    do_sleep(time)
-    Nil
+  do_sleep(time)
+  Nil
 }

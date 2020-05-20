@@ -1,11 +1,12 @@
 import gleam/list
 import gleam/int
+import gleam/iodata
 import gleam/result
 import gleam/string
+import gleam/http
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas_utils
-import midas/http
 import net/http as wire
 
 fn parse_method(method_string) -> Result(http.Method, Nil) {
@@ -33,9 +34,11 @@ fn read_request(socket) {
   let tuple(path, query_string) = midas_utils.split_on(raw_path, "?")
 
   let [tuple("host", authority), ..headers] = raw_headers
+  let tuple(host, port_string) = midas_utils.split_on(authority, ":")
+  let port = result.then(port_string, int.parse)
 
   let content_length = result.unwrap(
-    http.get_header(headers, "content-length"),
+    list.key_find(headers, "content-length"),
     or: "0",
   )
   let Ok(content_length) = int.parse(content_length)
@@ -47,20 +50,23 @@ fn read_request(socket) {
     }
   }
   Ok(
-    http.Request(
-      method: method,
-      authority: authority,
-      headers: headers,
-      path: path,
-      query: query_string,
-      body: body,
+    http.Message(
+      http.RequestHead(
+        method: method,
+        host: host,
+        port: port,
+        path: path,
+        query: query_string,
+      ),
+      headers,
+      iodata.from_strings([body]),
     ),
   )
 }
 
 // completely ignore reson phrases
 fn response_to_string(response) {
-  let http.Response(status: status, headers: headers, body: body) = response
+  let http.Message(head: http.ResponseHead(status), headers: headers, body: body) = response
   let status_line = string.concat(["HTTP/1.1 ", int.to_string(status), " \r\n"])
   let response_head = list.fold(
     headers,
@@ -70,7 +76,7 @@ fn response_to_string(response) {
       string.concat([buffer, name, ": ", value, "\r\n"])
     },
   )
-  let response = string.concat([response_head, "\r\n", body])
+  let response = string.concat([response_head, "\r\n", iodata.to_string(body)])
   response
 }
 

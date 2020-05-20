@@ -39,7 +39,12 @@ pub fn read_http_request_headers_test() {
   let Ok(listen_socket) = http.listen(9002)
 
   let Ok(socket) = tcp.connect("localhost", 9002)
-  let Ok(_) = tcp.send(socket, "GET / HTTP/1.1\r\naccept: text/plain\r\nx-foo: bar\r\n\r\n")
+  let Ok(
+    _,
+  ) = tcp.send(
+    socket,
+    "GET / HTTP/1.1\r\naccept: text/plain\r\nx-foo: bar\r\n\r\n",
+  )
 
   let Ok(server_socket) = http.accept(listen_socket)
   let Ok(
