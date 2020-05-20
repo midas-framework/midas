@@ -1,14 +1,16 @@
+import gleam/iodata.{Iodata}
 import gleam/result
+
+import gleam/http.{Request, Response}
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import magpie/supervisor
-import midas/http.{Request, Response}
 
-pub fn spawn_link(handler: fn(Request) -> Response, port: Int) {
+pub fn spawn_link(handler: fn(Request(Iodata)) -> Response(Iodata), port: Int) {
   supervisor.spawn_link(handler, port)
 }
 
-pub fn start_link(handler: fn(Request) -> Response, port: Int) {
+pub fn start_link(handler: fn(Request(Iodata)) -> Response(Iodata), port: Int) {
   let pid = spawn_link(handler, port)
   Ok(pid)
 }

@@ -1,3 +1,4 @@
+
 // import gleam/dynamic
 // import gleam/should
 //
@@ -48,8 +49,6 @@
 //   let Error(Nil) = decode(parser, [])
 //   should.equal(5, 5)
 // }
-
-
 // type Stack(a) {
 //     Push(a)
 //     DoPop(From(a))
@@ -65,16 +64,12 @@
 //         }
 //     }
 // }
-
 // fn start_stack() {0}
-    // process.spawn_link(loop(_, []))
-
+// process.spawn_link(loop(_, []))
 // let s1 = start_stack()
 // let s2 = process.spawn_link(loop(_, []))
-
 // process.send(s1, Push(1))
 // process.send(s2, Push("hello"))
-
 //
 // fn form_parser() {
 //   Input("username", string, Input("age", integer, Collect(Curry2(User))))
