@@ -1,5 +1,5 @@
 import process/process
-import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout}
+import process/process.{Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout}
 import process/supervisor/rest_for_one
 import midas_utils
 import gleam/should

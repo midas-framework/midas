@@ -155,14 +155,14 @@ pub fn self(_: Receive(m)) -> Pid(m) {
   unsafe_self()
 }
 
-// Start a run function with a reference to the type of error messages that the parent process can accept.
-// fn (run: fn() -> a, wrap_exit: fn(a) -> Message(parent)) Needs to be in process library that the specific message mapped to will be exit.
-
 // This can be typed because an untyped pid is only the result of a DOWN or EXIT Message
-// TODO make exit reason Killed and have a special fn for kill
 external fn exit(Pid(m), Atom) -> Bool =
   "erlang" "exit"
 
+/// Kill a process
+///
+/// Stop the exection of a process.
+/// The process unconditionally exits with the reason `killed`.
 pub fn kill(pid: Pid(m)) -> Bool {
     exit(pid, atom.create_from_string("kill"))
 }
@@ -179,36 +179,67 @@ pub external fn bare(Pid(a)) -> BarePid =
   "process_native" "identity"
 
 // WORKING WITH MONITORS AND REFERENCES
+
+/// A unique reference
+///
 pub external type Ref
 
+/// The type of a monitor.
+///
+/// Monitors can be set on processes or ports.
+/// This module only allows you to monitor processes,
+/// but this type is needed for deconstructing Down message.
+/// If exit/monitor mapping is implemented then this type will no longer be needed
+///
+/// https://github.com/midas-framework/midas/issues/20
 pub type MonitorType {
   Process
 }
 
-pub external fn monitor(MonitorType, Pid(m)) -> Ref =
+external fn erlang_monitor(MonitorType, Pid(m)) -> Ref =
   "erlang" "monitor"
 
-pub fn monitor_process(pid) {
-  monitor(Process, pid)
+/// Start a monitor on a process
+///
+/// When the process terminates, a monitor message will be sent to the calling process.
+/// See `demonitor` to cancel running monitors
+pub fn monitor(pid) {
+  erlang_monitor(Process, pid)
 }
 
+/// Options when demonitoring a process
 pub type DemonitorOptions {
   Flush
 }
 
+/// Stop monitoring a process
+///
+/// Use the reference from monitoring a process to stop monitoring the process.
+/// Use the Flush option to remove any messages from this monitor from the processes mailbox
 pub external fn demonitor(Ref, List(DemonitorOptions)) -> Bool =
   "erlang" "demonitor"
 
 // PROCESS FLAGS, WARNING:
-// Can change the messages expected in a receive function
+
+/// Options that can be set using `process_flag`
+///
+/// TrapExit can change the messages expected in a receive function
 pub type ProcessFlag {
   TrapExit(Bool)
 }
 
+/// Set a process flag
+///
+/// See the erlang documentation for details.
+/// https://erlang.org/doc/man/erlang.html#process_flag-2
 pub external fn process_flag(ProcessFlag) -> ProcessFlag =
   "process_native" "process_flag"
 
 // CALL PROCESS
+
+/// Reference to a calling process
+///
+/// See `call` for how to send a message to a process and await a reply.
 pub type From(r) {
   From(Ref, Pid(tuple(Ref, r)))
 }
@@ -237,7 +268,7 @@ pub fn call(
   constructor: fn(From(r)) -> m,
   wait: Wait,
 ) -> Result(r, CallError) {
-  let reference = monitor_process(pid)
+  let reference = monitor(pid)
   let from = From(reference, unsafe_self())
   let _message = send(pid, constructor(from))
   receive_reply(reference, wait)
