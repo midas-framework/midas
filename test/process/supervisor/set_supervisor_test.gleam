@@ -24,6 +24,6 @@ pub fn listing_children_test() {
   process.send(c1, Nil)
 
   // TODO remove
-  process.do_sleep(100)
+  process.sleep(100)
   should.equal(Ok([c2]), set_supervisor.which_children(supervisor))
 }

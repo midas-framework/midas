@@ -1,6 +1,4 @@
-{"1.1.0",
-[{<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.8.0">>},0}]}.
-[
-{pkg_hash,[
- {<<"gleam_stdlib">>, <<"A2DA46A7F2A971DBD973B04596182C71EC03D7A2991B75DCE995D7D154018FA5">>}]}
-].
+[{<<"gleam_stdlib">>,
+  {git,"git://github.com/gleam-lang/stdlib.git",
+       {ref,"ecceb4e7f332749753391d728c121ef1792e9191"}},
+  0}].

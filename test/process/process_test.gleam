@@ -1,6 +1,6 @@
 import gleam/result.{Option}
 import process/process
-import process/process.{MonitorType, Ref, Flush, From, Pid, BarePid, Process, ExitReason, Normal, Kill, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
+import process/process.{MonitorType, Process, Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
 import gleam/should
 
 pub external fn unsafe_receive(Wait) -> Option(m) =
@@ -65,7 +65,7 @@ pub fn kill_process_test() {
           Nil
         },
       )
-      process.exit(child, process.Kill)
+      process.kill(child)
       let r = receive(Milliseconds(100))
       process.send(test, r)
     },
@@ -85,7 +85,7 @@ pub type Down {
 pub fn monitor_test() {
   let pid = process.spawn_link(fn(_) { Nil })
 
-  let monitor_reference = process.monitor(Process, pid)
+  let monitor_reference = process.monitor(pid)
   let Ok(
     Down(down_reference, Process, down_pid, Normal),
   ) = unsafe_receive(Infinity)
@@ -105,7 +105,7 @@ pub fn monitor_test() {
 pub fn demonitor_flush_test() {
   let pid = process.spawn_link(fn(_) { Nil })
 
-  let monitor_reference = process.monitor(Process, pid)
+  let monitor_reference = process.monitor(pid)
   let True = process.demonitor(monitor_reference, [Flush])
   let Error(Nil) = unsafe_receive(Milliseconds(100))
   Nil

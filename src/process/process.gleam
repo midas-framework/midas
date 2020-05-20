@@ -15,22 +15,25 @@
 //// You will need these imports for the examples to work
 ////
 ////    import process/process
-////    import process/process.{Normal, Infinity, From}
+////    import process/process.{Infinity, From}
 ////
 //// ## Starting and stopping processes
 ////
 //// A process is started using `process.spawn_link/1`.
-//// The single argument is a function that accepts a receive call and returns an `ExitReason`.
+//// The `spawn_link` function executed the given function in a new process.
 ////
-//// This is an example of the simplest process that immediately exits with reason `Normal`
+//// This is an example of the simplest process that immediately exits.
 ////
 ////    let pid = process.spawn_link(fn(_receive) {
-////        Normal
+////        Nil
 ////    })
 ////
 //// ## Sending and receiving messages
 ////
-//// Here is a simple process that sums all the numbers sent to it.
+//// Messages are sent to a Processes reference `Pid(m)` using `process.send`.
+//// A procees receives these messages using the receive function that was passed as an argument to the run function went it was spawned.
+////
+//// Example a simple process that sums all the numbers sent to it.
 ////
 ////    fn loop(receive, state) {
 ////      let value = receive(Infinity)
@@ -82,6 +85,7 @@
 //// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
 
 
+import gleam/atom.{Atom}
 import gleam/result.{Option}
 
 /// A value in milliseconds or infinity.
@@ -101,7 +105,8 @@ pub external type Pid(m)
 /// In most cases `Normal` is the correct value to return from a process's run function.
 pub type ExitReason {
   Normal
-  Kill
+  // TODO Add a reference to stacktrace
+  Crashed
   Killed
 }
 
@@ -114,50 +119,54 @@ type Receive(m) =
 type Run(m, r) =
   fn(Receive(m)) -> r
 
-pub external fn spawn_link(Run(m, r)) -> Pid(m) =
+/// Start a new process to execute the given function.
+///
+/// The run function, passed to `spawn_link`, will be called with a function that is used to pop messages from the mailbox.
+/// Messages can be sent to the mailbox for this process using `process.send` and the Pid reference returned by `spawn_link`.
+///
+/// When the run function completes the process will stop with a normal exit reason.
+///
+pub external fn spawn_link(run: Run(m, r)) -> Pid(m) =
   "process_native" "spawn_link"
 
 external fn do_send(Pid(m), m) -> m =
   "erlang" "send"
 
+/// Send a message to a process.
+///
+/// Note the message is sent asynchronously and this call returns immediately.
+/// This call **will not** error if the process is not alive or is unresponse.
+/// Use `process.call` to await on a reply from the receiving process.
 pub fn send(pid, message) {
   do_send(pid, message)
   Nil
 }
 
+/// Get a reference to the Pid of the calling process.
+///
+/// The message types accepted by this process is inferred from it's usage.
 pub external fn unsafe_self() -> Pid(m) =
   "erlang" "self"
 
+/// Get a typed reference to the Pid of the calling process.
+///
+/// This function takes the process's receive function as an argument to correctly infer the message type of the Pid.
 pub fn self(_: Receive(m)) -> Pid(m) {
   unsafe_self()
 }
 
-// Start a run function with a reference to the type of error messages that the parent process can accept.
-// fn (run: fn() -> a, wrap_exit: fn(a) -> Message(parent)) Needs to be in process library that the specific message mapped to will be exit.
-
 // This can be typed because an untyped pid is only the result of a DOWN or EXIT Message
-// TODO make exit reason Killed and have a special fn for kill
-pub external fn exit(Pid(m), ExitReason) -> Bool =
+external fn exit(Pid(m), Atom) -> Bool =
   "erlang" "exit"
 
-// Add a clause that turned Killed into Kill
-// Or just StopReason
-// type Kill {
-//     Kill
-// }
-//
-// external fn kill(Pid(m), Kill) -> Bool
-// = "erlang" "exit"
-//
-// pub fn exit(pid, reason) {
-//     case reason {
-//         Killed -> kill(pid, Kill)
-//         _ -> do_exit(pid, reason)
-//     }
-// }
-// The return value of a run function should just be the exit reason of a process.
-// Then a Down message can just be treated as a promise for the result of the computation
-// erlang:is_process_alive
+/// Kill a process
+///
+/// Stop the exection of a process.
+/// The process unconditionally exits with the reason `killed`.
+pub fn kill(pid: Pid(m)) -> Bool {
+    exit(pid, atom.create_from_string("kill"))
+}
+
 // WORKING WITH UNTYPED PROCESSES
 
 /// A Pid that is not parameterised by the messages it can receive.
@@ -170,75 +179,118 @@ pub external fn bare(Pid(a)) -> BarePid =
   "process_native" "identity"
 
 // WORKING WITH MONITORS AND REFERENCES
+
+/// A unique reference
+///
 pub external type Ref
 
+/// The type of a monitor.
+///
+/// Monitors can be set on processes or ports.
+/// This module only allows you to monitor processes,
+/// but this type is needed for deconstructing Down message.
+/// If exit/monitor mapping is implemented then this type will no longer be needed
+///
+/// https://github.com/midas-framework/midas/issues/20
 pub type MonitorType {
   Process
 }
 
-pub external fn monitor(MonitorType, Pid(m)) -> Ref =
+external fn erlang_monitor(MonitorType, Pid(m)) -> Ref =
   "erlang" "monitor"
 
-pub fn monitor_process(pid) {
-  monitor(Process, pid)
+/// Start a monitor on a process
+///
+/// When the process terminates, a monitor message will be sent to the calling process.
+/// See `demonitor` to cancel running monitors
+pub fn monitor(pid) {
+  erlang_monitor(Process, pid)
 }
 
+/// Options when demonitoring a process
 pub type DemonitorOptions {
   Flush
 }
 
+/// Stop monitoring a process
+///
+/// Use the reference from monitoring a process to stop monitoring the process.
+/// Use the Flush option to remove any messages from this monitor from the processes mailbox
 pub external fn demonitor(Ref, List(DemonitorOptions)) -> Bool =
   "erlang" "demonitor"
 
 // PROCESS FLAGS, WARNING:
-// Can change the messages expected in a receive function
+
+/// Options that can be set using `process_flag`
+///
+/// TrapExit can change the messages expected in a receive function
 pub type ProcessFlag {
   TrapExit(Bool)
 }
 
+/// Set a process flag
+///
+/// See the erlang documentation for details.
+/// https://erlang.org/doc/man/erlang.html#process_flag-2
 pub external fn process_flag(ProcessFlag) -> ProcessFlag =
   "process_native" "process_flag"
 
 // CALL PROCESS
+
+/// Reference to a calling process
+///
+/// See `call` for how to send a message to a process and await a reply.
 pub type From(r) {
   From(Ref, Pid(tuple(Ref, r)))
 }
 
-// Can check pid is self
-// Need error because process could have terminated
-// needs to be separate receive fn because we want to ignore exits and motiors from other pids
-// Might be more expressive to "Gone/Slow", I can't have a separate Type that includes a Timout Branch
+/// Reasons for a call to fail
+///
+/// A call may fail due to the process being dead, `Gone` or a response not being received in time.
+
+// We should always have {ref, message} on a separate channel for late replies from calls.
 pub type CallError {
   Timeout
-  // Slow
   Gone
 }
 
 // Gone(ExitReason) To not conflict with Down types
-pub external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
+external fn receive_reply(Ref, Wait) -> Result(r, CallError) =
   "process_native" "receive_reply"
 
+/// Make a call to a process
+///
+/// A call is a message sent to a process which the client expect a reply.
+/// This funtion will not return until the response to the call is received or an error is detected.
+///
 pub fn call(
   pid: Pid(m),
   constructor: fn(From(r)) -> m,
   wait: Wait,
 ) -> Result(r, CallError) {
-  let reference = monitor_process(pid)
+  let reference = monitor(pid)
   let from = From(reference, unsafe_self())
   let _message = send(pid, constructor(from))
   receive_reply(reference, wait)
 }
 
+/// Reply to a call.
+///
+/// Send a message in reply to a call from another process.
+/// *See `process.call` for starting a call.
 pub fn reply(from: From(r), message: r) {
   let From(reference, pid) = from
   send(pid, tuple(reference, message))
 }
 
-// Proc lib needs a start and init_ack function
-// Will need an external receive ack
-pub type OK {
-  OK(OK)
-}
-
-pub external fn do_sleep(Int) -> OK =
+external fn do_sleep(Int) -> Atom =
   "timer" "sleep"
+
+/// Suspend a process.
+///
+/// The process calling this function is suspended for the number of milliseconds given.
+///
+pub fn sleep(time: Int) -> Nil {
+    do_sleep(time)
+    Nil
+}

@@ -1,6 +1,6 @@
 // Names mixed/Team/Group/Individual/myriad/motly
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 
 pub type ChildSpecs(a, b, c) {
   One(fn() -> Pid(a))
@@ -16,7 +16,7 @@ type ChildState(a) {
 
 // Finished
 fn do_stop(pid) {
-  process.exit(pid, Kill)
+  process.kill(pid)
   Stopping(pid)
 }
 

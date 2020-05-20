@@ -1,5 +1,5 @@
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Kill, Infinity, Milliseconds, TrapExit}
+import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import process/supervisor/rest_for_one
 import net/http
 import magpie/server_supervisor

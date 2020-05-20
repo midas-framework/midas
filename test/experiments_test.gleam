@@ -1,53 +1,53 @@
-import gleam/dynamic
-import gleam/should
-
-import process/process.{Infinity, From}
-
-pub type Parser(r) {
-  Pop(Parser(fn(String) -> r))
-  End(r)
-}
-
-fn apply(parser: Parser(fn(String) -> r), value: String) -> Parser(r) {
-  // fn apply(parser) {
-  case parser {
-    End(func) -> End(func(value))
-    Pop(inner) -> {
-      // the r value is always another function in the case of a POP here, but the compiler is unable to work that out.
-      let inner = dynamic.unsafe_coerce(dynamic.from(inner))
-      let applied = apply(inner, value)
-      let applied = dynamic.unsafe_coerce(dynamic.from(applied))
-      Pop(applied)
-    }
-  }
-}
-
-// Pop(inner) -> Pop( , value))
-// Pop(End(func)) -> Pop(End(func(value)))
-// Pop(Pop(End(func))) -> Pop(Pop(End(func(value))))
-fn decode(parser: Parser(r), input: List(String)) -> Result(r, Nil) {
-  case parser {
-    // THis is where the pop is removed
-    Pop(
-      inner,
-    ) -> // For now just assume there are enough entries in the list
-    case input {
-      [value, ..rest] -> decode(apply(inner, value), rest)
-      [] -> Error(Nil)
-    }
-    // A switch all the sub parsers have the same response type, soo can be a list
-    End(value) -> Ok(value)
-  }
-}
-
-// Run over the parser for documentation
-pub fn run_test() {
-  let parser = Pop(Pop(Pop(End(fn(a) { fn(b) { fn(c) { tuple(a, b) } } }))))
-  parser == End(tuple("", ""))
-  let Ok(tuple("a", "b")) = decode(parser, ["a", "b", "c"])
-  let Error(Nil) = decode(parser, [])
-  should.equal(5, 5)
-}
+// import gleam/dynamic
+// import gleam/should
+//
+// import process/process.{Infinity, From}
+//
+// pub type Parser(r) {
+//   Pop(Parser(fn(String) -> r))
+//   End(r)
+// }
+//
+// fn apply(parser: Parser(fn(String) -> r), value: String) -> Parser(r) {
+//   // fn apply(parser) {
+//   case parser {
+//     End(func) -> End(func(value))
+//     Pop(inner) -> {
+//       // the r value is always another function in the case of a POP here, but the compiler is unable to work that out.
+//       let inner = dynamic.unsafe_coerce(dynamic.from(inner))
+//       let applied = apply(inner, value)
+//       let applied = dynamic.unsafe_coerce(dynamic.from(applied))
+//       Pop(applied)
+//     }
+//   }
+// }
+//
+// // Pop(inner) -> Pop( , value))
+// // Pop(End(func)) -> Pop(End(func(value)))
+// // Pop(Pop(End(func))) -> Pop(Pop(End(func(value))))
+// fn decode(parser: Parser(r), input: List(String)) -> Result(r, Nil) {
+//   case parser {
+//     // THis is where the pop is removed
+//     Pop(
+//       inner,
+//     ) -> // For now just assume there are enough entries in the list
+//     case input {
+//       [value, ..rest] -> decode(apply(inner, value), rest)
+//       [] -> Error(Nil)
+//     }
+//     // A switch all the sub parsers have the same response type, soo can be a list
+//     End(value) -> Ok(value)
+//   }
+// }
+//
+// // Run over the parser for documentation
+// pub fn run_test() {
+//   let parser = Pop(Pop(Pop(End(fn(a) { fn(b) { fn(c) { tuple(a, b) } } }))))
+//   parser == End(tuple("", ""))
+//   let Ok(tuple("a", "b")) = decode(parser, ["a", "b", "c"])
+//   let Error(Nil) = decode(parser, [])
+//   should.equal(5, 5)
+// }
 
 
 // type Stack(a) {
