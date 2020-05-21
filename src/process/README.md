@@ -16,7 +16,94 @@ https://arxiv.org/pdf/1611.06276.pdf
 
 ## Comments
 
+1. Document HTTP and update README
+2. Switch to Run only child specs
+3. no name is just happening, doc this + spawn without error
+4. Build calls on channels, need this assumption because of late call replies after timeout and returning to normal receive.
+5. return more than pid from supervisor, might want reference to ets table or some such. supervisors can make a single call to look up ets table and pass reference to all childrean.
+  this can also be done in run function.
+
+  ```rust
+  pub fn spec(){
+    Permanent(run, [TrapExit(Exit)])
+  }
+  ```
+Defining child spec on the child module doesn't work if parameterised at the supervisor level,
+unless PermanentSupervisorChild(Permanent(run, blah))
+
 #### supervisors notes
+
+process always has to handle case it might be too slow and be killed, or node dies. let's go strait to kill!
+
+fn do_loop(receive, loop, state) {
+  do_loop(receive, loop, loop(receive(Infinity, state)))
+}
+
+fn gen_server(init, loop) {
+  fn (receive) {
+    let state = init()
+    do_loop(receive, loop, state)
+  }
+}
+// Return state loop
+
+
+fn loop(message) {
+
+  tuple(loop_two(\_, "Foo"), [(Address, message), (from, reply)])
+}
+
+Don't think the list of messages is doable, could be a send function, and there might be ways to intercept, but we don't have single state value to look at
+Opaque
+tuple(BarePid, Dynamic)
+
+```rust
+type Envelope {
+  Envelope(Pid(Dynamic), Dynamic)
+}
+
+process.envelope(pid: Pid(m), message: m) -> Envelope
+
+process.reply_envelope(from: From(m), message: m) -> Envelope {
+  let From(ref, pid) = from
+  let message = tuple(ref, message)
+  envelope(pid, message)
+}
+```
+
+```rust
+handle(m, s) -> tuple(s, List(Envelope))
+```
+
+```rust
+type Message(a) {
+    Push(a)
+    Pop(From(a))
+}
+
+pub fn handle(message, state) {
+    case message {
+        Push(new) -> {
+          tuple([new, ..state], [])
+        }
+        Pop(from) -> {
+            let tuple(top, state) = list.pop(state)
+            tuple(state, [process.reply_envelope(from, top)])
+        }
+    }
+}
+
+pub fn init() {
+    []
+}
+
+gen_server.spawn_link(init, handle)
+```
+
+If ets is started reference can be returned by a call to the pid in an init step
+Should write up why No names
+
+Call should be build on channels.
 
 start_link functions must start the link, supervisors do not handle this
 https://erlang.org/doc/man/supervisor.html
@@ -118,3 +205,56 @@ type Spec(a, b) {
     Last
 }
 ```
+
+### Thoughts on processes
+
+**These notes are not relevant to understanding Midas as a server or framework. The process code should eventually be extracted from this repo.**
+
+Supervisors should not accept start functions that fail.
+
+One thing that can cause failures is naming processes.
+This is a big global state problem and probably could always happen,
+but at the registered process level a naming failure should be a hard crash.
+
+Potential an Ignore response is ok, for example not starting a server if the PORT is not set.
+There is no reason the supervisor can't handle this but it might be a nicer grouping of logic to put this in the particular process.
+This is similar to the logic that lead to child_specs
+
+Having the init and init_ack functionality causes alot of delay and the supervisor has to watch for more race conditions.
+
+config typed properly
+
+```rust
+let Ok(pid) = postgresql.start_client(database_url: String)
+
+// Replace that unsafe start API with two step process
+// 1. outside supervision tree
+let Ok(db_config) = postgresql.parse_url(database_url: String)
+
+// 2.
+let pid = postgresql.start_client(db_config)
+```
+
+There are some good discussion on this around,
+need to look for more on less things being required at startup.
+users of the pg_client are better of reporting the errors.
+
+##### Request handlers
+
+These are tasks not "actors", they shouldn't have an open inbox but deal in gen:replies promises.
+
+Super general inbox setup
+
+```rust
+let tuple(receive, resolve) = promise.new()
+
+process.spawn(fn(){
+  resolve(5)
+})
+
+let Ok(value) = receive(Infinity)
+```
+
+A sendable trait could be really useful here.
+
+### Resources http://joeduffyblog.com/2015/11/19/asynchronous-everything/

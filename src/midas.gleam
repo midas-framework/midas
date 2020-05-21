@@ -1,6 +1,5 @@
 import gleam/iodata.{Iodata}
 import gleam/result
-
 import gleam/http.{Request, Response}
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}

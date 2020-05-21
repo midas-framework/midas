@@ -66,7 +66,11 @@ fn read_request(socket) {
 
 // completely ignore reson phrases
 fn response_to_string(response) {
-  let http.Message(head: http.ResponseHead(status), headers: headers, body: body) = response
+  let http.Message(
+    head: http.ResponseHead(status),
+    headers: headers,
+    body: body,
+  ) = response
   let status_line = string.concat(["HTTP/1.1 ", int.to_string(status), " \r\n"])
   let response_head = list.fold(
     headers,

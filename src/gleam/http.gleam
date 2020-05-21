@@ -68,6 +68,11 @@ pub fn path_segments(message: Message(RequestHead, body)) -> List(String) {
   uri.path_segments(path)
 }
 
+pub fn method(message: Message(RequestHead, body)) -> Method {
+  let Message(RequestHead(method: method, ..), ..) = message
+  method
+}
+
 pub fn get_query(
   message: Message(RequestHead, body),
 ) -> Option(List(tuple(String, String))) {
