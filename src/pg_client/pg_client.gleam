@@ -1,5 +1,6 @@
 // gleam_pg/pg_client
 import gleam/dynamic.{Dynamic}
+import gleam/option.{Some, None}
 import process/process.{Pid}
 import gleam/uri
 import utils/charlist
@@ -23,17 +24,17 @@ pub fn start_link(database_url) {
   case uri.parse(database_url) {
     Ok(
       uri.Uri(
-        Ok("postgres"),
-        Ok(userinfo),
-        Ok(host),
-        Ok(port),
+        Some("postgres"),
+        Some(userinfo),
+        Some(host),
+        Some(port),
         path,
-        Error(Nil),
-        Error(Nil),
+        None,
+        None,
       ),
     ) -> case midas_utils.split_on(userinfo, ":") {
-      tuple(user, Ok(password)) -> case midas_utils.split_on(path, "/") {
-        tuple("", Ok(database)) -> {
+      tuple(user, Some(password)) -> case midas_utils.split_on(path, "/") {
+        tuple("", Some(database)) -> {
           let options = [
               Host(charlist.binary_to_list(host)),
               Port(port),

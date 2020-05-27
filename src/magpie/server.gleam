@@ -1,6 +1,7 @@
 import gleam/list
 import gleam/int
 import gleam/iodata
+import gleam/option.{Some, None}
 import gleam/result
 import gleam/string
 import gleam/http
@@ -35,7 +36,14 @@ fn read_request(socket) {
 
   let [tuple("host", authority), ..headers] = raw_headers
   let tuple(host, port_string) = midas_utils.split_on(authority, ":")
-  let port = result.then(port_string, int.parse)
+  let port = case port_string {
+      Some(port_string) -> {
+          let Ok(port) = int.parse(port_string)
+          Some(port)
+      }
+      None -> None
+  }
+  // result.then(port_string, int.parse)
 
   let content_length = result.unwrap(
     list.key_find(headers, "content-length"),
@@ -90,7 +98,7 @@ pub type Accept {
 }
 
 fn run(receive, handler, listen_socket) {
-  let Ok(Accept(from)) = receive(Infinity)
+  let Some(Accept(from)) = receive(Infinity)
   let Ok(socket) = wire.accept(listen_socket)
   process.reply(from, Nil)
   let Ok(request) = read_request(socket)

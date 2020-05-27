@@ -4,6 +4,6 @@
 % TODO make a net/utils module
 split_on(Subject, Pattern) ->
   case binary:split(Subject, Pattern) of
-    [Part, Rest] -> {Part, {ok, Rest}};
-    [Part] -> {Part, {error, nil}}
+    [Part, Rest] -> {Part, {some, Rest}};
+    [Part] -> {Part, none}
   end.

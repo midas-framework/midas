@@ -1,6 +1,7 @@
 import gleam/int
 import gleam/list
 import gleam/map.{Map}
+import gleam/option.{Some, None}
 import gleam/result
 import midas_utils
 
@@ -25,8 +26,8 @@ pub fn get_env() -> Map(String, String) {
         maybe_value,
       ) = midas_utils.split_on(env_var_name_value, "=")
       case maybe_value {
-        Ok(value) -> [tuple(key, value), ..done]
-        Error(Nil) -> done
+        Some(value) -> [tuple(key, value), ..done]
+        None -> done
       }
     },
   )

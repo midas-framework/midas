@@ -85,7 +85,7 @@
 //// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
 
 import gleam/atom.{Atom}
-import gleam/result.{Option}
+import gleam/option.{Option}
 
 /// A value in milliseconds or infinity.
 pub type Wait {

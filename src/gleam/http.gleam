@@ -1,11 +1,10 @@
 import gleam/int
 import gleam/iodata.{Iodata}
 import gleam/list
-import gleam/result.{Option}
+import gleam/option.{Option, Some, None}
 import gleam/string
 import gleam/uri
 
-// All these functions assume socket is reading one line at a time.
 // HTTP standard method as defined by RFC 2616, and PATCH which is defined by
 // RFC 5789.
 //
@@ -50,7 +49,7 @@ pub type Response(body) =
 
 pub fn request(method: Method, uri_string: String) -> Request(Nil) {
   let Ok(
-    uri.Uri(host: Ok(host), port: port, path: path, query: query, ..),
+    uri.Uri(host: Some(host), port: port, path: path, query: query, ..),
   ) = uri.parse(uri_string)
   Message(
     head: RequestHead(method, host, port, path, query),
@@ -75,17 +74,17 @@ pub fn method(message: Message(RequestHead, body)) -> Method {
 
 pub fn get_query(
   message: Message(RequestHead, body),
-) -> Option(List(tuple(String, String))) {
+) -> Result(List(tuple(String, String)), Nil) {
   let Message(RequestHead(query: query_string, ..), ..) = message
   case query_string {
-    Ok(query_string) -> uri.parse_query(query_string)
-    Error(Nil) -> Ok([])
+    Some(query_string) -> uri.parse_query(query_string)
+    None -> Ok([])
   }
 }
 
 pub fn get_header(message: Message(head, body), key: String) -> Option(String) {
   let Message(headers: headers, ..) = message
-  list.key_find(headers, string.lowercase(key))
+  list.key_find(headers, string.lowercase(key)) |> option.from_result()
 }
 
 pub fn set_header(
@@ -120,7 +119,7 @@ pub fn set_body(
 
 pub fn get_form(
   message: Message(head, Iodata),
-) -> Option(List(tuple(String, String))) {
+) -> Result(List(tuple(String, String)), Nil) {
   let Message(body: body, ..) = message
   uri.parse_query(iodata.to_string(body))
 }
