@@ -18,7 +18,7 @@ fn loop(receive, server_supervisor) {
   // let monitor = process.monitor_process(server)
   // Would be great to call reply in the server fn but can give the ref because monitor called after process creation.
   // Alternative is a receive block, pass argument to start child and wait for down or accepted.
-  let Ok(pid) = set_supervisor.start_child(server_supervisor)
+  let Ok(pid) = set_supervisor.start_child(server_supervisor, Nil)
   // TODO Link then unlink
   let Ok(Nil) = server.accept(pid)
   loop(receive, server_supervisor)

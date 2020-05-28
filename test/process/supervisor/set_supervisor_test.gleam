@@ -6,7 +6,7 @@ import midas_utils
 import gleam/should
 
 // start child fn takes test pid
-fn start_child() {
+fn start_child(_: Nil) {
   process.spawn_link(
     fn(receive) {
       let Some(_) = receive(Infinity)
@@ -18,9 +18,9 @@ fn start_child() {
 pub fn listing_children_test() {
   let supervisor = set_supervisor.spawn_link(start_child)
   should.equal(Ok([]), set_supervisor.which_children(supervisor))
-  let Ok(c1) = set_supervisor.start_child(supervisor)
+  let Ok(c1) = set_supervisor.start_child(supervisor, Nil)
   should.equal(Ok([c1]), set_supervisor.which_children(supervisor))
-  let Ok(c2) = set_supervisor.start_child(supervisor)
+  let Ok(c2) = set_supervisor.start_child(supervisor, Nil)
   should.equal(Ok([c1, c2]), set_supervisor.which_children(supervisor))
   process.send(c1, Nil)
 

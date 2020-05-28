@@ -5,8 +5,8 @@ import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas_utils
 
-pub type Messages(m) {
-  StartChild(From(Pid(m)))
+pub type Messages(m, c) {
+  StartChild(From(Pid(m)), c)
   WhichChildren(From(List(Pid(m))))
   EXIT(BarePid, ExitReason)
 }
@@ -23,8 +23,9 @@ fn pop(haystack, predicate, done) {
 
 fn loop(receive, start_child, children) {
   case receive(Infinity) {
-    Some(StartChild(from)) -> {
-      let child = start_child()
+      // Could instead pass in a function that returns the right pid?
+    Some(StartChild(from, config)) -> {
+      let child = start_child(config)
       let children = [child, ..children]
       process.reply(from, child)
       loop(receive, start_child, children)
@@ -48,12 +49,12 @@ fn init(receive, start_child) {
   loop(receive, start_child, [])
 }
 
-pub fn spawn_link(start_child: fn() -> Pid(a)) -> Pid(Messages(a)) {
+pub fn spawn_link(start_child: fn(c) -> Pid(a)) -> Pid(Messages(a, c)) {
   process.spawn_link(init(_, start_child))
 }
 
-pub fn start_child(supervisor: Pid(Messages(m))) {
-  process.call(supervisor, StartChild(_), Milliseconds(5000))
+pub fn start_child(supervisor: Pid(Messages(m, c)), config: c) {
+  process.call(supervisor, StartChild(_, config), Milliseconds(5000))
 }
 
 pub fn which_children(supervisor) {
