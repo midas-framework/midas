@@ -103,17 +103,14 @@ fn loop(receive, specs, children) {
   case receive(Infinity) {
     Some(EXIT(pid, _reason)) -> {
       let tuple(child1, child2, child3) = children
-
       let pid1 = child_pid(child1)
       let pid2 = child_pid(child2)
       let pid3 = child_pid(child3)
-
       let children = case Ok(pid) {
         p if p == pid1 -> tuple(Stopped, child2, child3)
         p if p == pid2 -> tuple(child1, Stopped, child3)
         p if p == pid3 -> tuple(child1, child2, Stopped)
       }
-
       // p -> {
       //     // TODO handle parent pid, for the moment parents are simply killed.
       //     tuple(child1, child2, child3)

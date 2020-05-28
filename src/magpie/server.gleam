@@ -37,14 +37,14 @@ fn read_request(socket) {
   let [tuple("host", authority), ..headers] = raw_headers
   let tuple(host, port_string) = midas_utils.split_on(authority, ":")
   let port = case port_string {
-      Some(port_string) -> {
-          let Ok(port) = int.parse(port_string)
-          Some(port)
-      }
-      None -> None
+    Some(port_string) -> {
+      let Ok(port) = int.parse(port_string)
+      Some(port)
+    }
+    None -> None
   }
-  // result.then(port_string, int.parse)
 
+  // result.then(port_string, int.parse)
   let content_length = result.unwrap(
     list.key_find(headers, "content-length"),
     or: "0",

@@ -66,6 +66,10 @@ pub fn set_form_test() {
     |> http.set_form([tuple("foo", "x y"), tuple("bar", "%&")])
 
   should.equal("foo=x+y&bar=%25%26", iodata.to_string(message.body))
+  should.equal(
+    Some("application/x-www-form-urlencoded"),
+    http.get_header(message, "content-type"),
+  )
 }
 
 pub fn get_form_test() {

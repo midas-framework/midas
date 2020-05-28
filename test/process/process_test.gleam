@@ -1,5 +1,4 @@
 import gleam/option.{Option, Some, None}
-
 import process/process
 import process/process.{MonitorType, Process, Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
 import gleam/should

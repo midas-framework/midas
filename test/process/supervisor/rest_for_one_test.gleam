@@ -1,5 +1,4 @@
 import gleam/option.{Some, None}
-
 import process/process
 import process/process.{Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout}
 import process/supervisor/rest_for_one

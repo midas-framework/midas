@@ -84,7 +84,8 @@ pub fn get_query(
 
 pub fn get_header(message: Message(head, body), key: String) -> Option(String) {
   let Message(headers: headers, ..) = message
-  list.key_find(headers, string.lowercase(key)) |> option.from_result()
+  list.key_find(headers, string.lowercase(key))
+  |> option.from_result()
 }
 
 pub fn set_header(
@@ -125,7 +126,9 @@ pub fn get_form(
 }
 
 pub fn set_form(message, form) {
-  set_body(message, uri.query_to_string(form))
+  message
+  |> set_header("content-type", "application/x-www-form-urlencoded")
+  |> set_body(uri.query_to_string(form))
 }
 
 pub fn redirect(location: String) -> Response(Iodata) {
