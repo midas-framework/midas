@@ -7,7 +7,7 @@
 [![IRC: #gleam-lang on chat.freenode.net](https://img.shields.io/badge/freenode%20chat-%23gleam--lang-indigo)](https://webchat.freenode.net/#gleam-lang)
 
 - [Install from hex.pm](https://hex.pm/packages/midas)
-- [Documentation available on hexdoc](https://hexdocs.pm/Midas)
+- [Documentation available on hexdoc](https://hexdocs.pm/midas)
 - [Discuss on freenode](https://webchat.freenode.net/#gleam-lang)
 
 ## Overview
