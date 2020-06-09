@@ -23,7 +23,7 @@ fn pop(haystack, predicate, done) {
 
 fn loop(receive, start_child, children) {
   case receive(Infinity) {
-      // Could instead pass in a function that returns the right pid?
+    // Could instead pass in a function that returns the right pid?
     Some(StartChild(from, config)) -> {
       let child = start_child(config)
       let children = [child, ..children]
