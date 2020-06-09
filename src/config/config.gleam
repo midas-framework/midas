@@ -21,14 +21,15 @@ pub fn get_env() -> Map(String, String) {
   |> list.fold(
     [],
     fn(env_var_name_value, done) {
-      let tuple(
-        key,
-        maybe_value,
-      ) = midas_utils.split_on(env_var_name_value, "=")
-      case maybe_value {
-        Some(value) -> [tuple(key, value), ..done]
-        None -> done
-      }
+      // let tuple(
+      //   key,
+      //   maybe_value,
+      // ) = midas_utils.split_on(env_var_name_value, "=")
+      // case maybe_value {
+      //   Some(value) -> [tuple(key, value), ..done]
+      //   None -> done
+      // }
+      todo
     },
   )
   |> map.from_list()

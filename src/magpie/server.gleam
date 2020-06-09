@@ -32,10 +32,11 @@ fn read_request(socket) {
     tuple(method_string, wire.AbsPath(raw_path), raw_headers),
   ) = wire.read_request_head(socket, 1000)
   let Ok(method) = parse_method(method_string)
-  let tuple(path, query_string) = midas_utils.split_on(raw_path, "?")
+  // let tuple(path, query_string) = string.split_once(raw_path, "?")
+  let tuple(path, query_string) = todo
 
   let [tuple("host", authority), ..headers] = raw_headers
-  let tuple(host, port_string) = midas_utils.split_on(authority, ":")
+  let tuple(host, port_string) = todo
   let port = case port_string {
     Some(port_string) -> {
       let Ok(port) = int.parse(port_string)

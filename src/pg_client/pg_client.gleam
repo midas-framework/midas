@@ -1,11 +1,10 @@
-// gleam_pg/pg_client
 import gleam/dynamic.{Dynamic}
 import gleam/option.{Some, None}
-import process/process.{Pid}
+import gleam/string
 import gleam/uri
-import utils/charlist
+
+import process/process.{Pid}
 import utils/charlist.{Charlist}
-import midas_utils
 
 type PgoOptions {
   Host(Charlist)
@@ -21,35 +20,36 @@ external fn do_start_link(List(PgoOptions)) -> Result(Pid(a), Nil) =
 
 // Could be spawn link, would accept a databaseurl type,
 pub fn start_link(database_url) {
-  case uri.parse(database_url) {
-    Ok(
-      uri.Uri(
-        Some("postgres"),
-        Some(userinfo),
-        Some(host),
-        Some(port),
-        path,
-        None,
-        None,
-      ),
-    ) -> case midas_utils.split_on(userinfo, ":") {
-      tuple(user, Some(password)) -> case midas_utils.split_on(path, "/") {
-        tuple("", Some(database)) -> {
-          let options = [
-              Host(charlist.binary_to_list(host)),
-              Port(port),
-              User(charlist.binary_to_list(user)),
-              Password(charlist.binary_to_list(password)),
-              Database(charlist.binary_to_list(database)),
-            ]
-          do_start_link(options)
-        }
-        _ -> Error(Nil)
-      }
-      _ -> Error(Nil)
-    }
-    _ -> Error(Nil)
-  }
+  // case uri.parse(database_url) {
+  //   Ok(
+  //     uri.Uri(
+  //       Some("postgres"),
+  //       Some(userinfo),
+  //       Some(host),
+  //       Some(port),
+  //       path,
+  //       None,
+  //       None,
+  //     ),
+  // ) -> case string.split_once(userinfo, ":") {
+  //     tuple(user, Some(password)) -> case string.split_once(path, "/") {
+  //       tuple("", Some(database)) -> {
+  //         let options = [
+  //             Host(charlist.binary_to_list(host)),
+  //             Port(port),
+  //             User(charlist.binary_to_list(user)),
+  //             Password(charlist.binary_to_list(password)),
+  //             Database(charlist.binary_to_list(database)),
+  //           ]
+  //         do_start_link(options)
+  //       }
+  //       _ -> Error(Nil)
+  //     }
+  //     _ -> Error(Nil)
+  //   }
+  //   _ -> Error(Nil)
+  // }
+  todo
 }
 
 pub type PgType {
