@@ -7,7 +7,6 @@ import gleam/string
 import gleam/http
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
-import midas_utils
 import net/http as wire
 
 fn parse_method(method_string) -> Result(http.Method, Nil) {

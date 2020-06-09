@@ -2,7 +2,6 @@ import gleam/option.{Some}
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds}
 import process/supervisor/set_supervisor
-import midas_utils
 import gleam/should
 
 // start child fn takes test pid

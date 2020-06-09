@@ -5,7 +5,6 @@ import gleam/http
 import gleam/http.{Request, Response, Get}
 import net/tcp
 import gleam/should
-import midas_utils
 
 fn handle_request(request) {
   let http.Message(body: body, ..) = request

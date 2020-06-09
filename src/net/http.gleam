@@ -1,6 +1,5 @@
 import gleam/list
 import gleam/string
-import midas_utils
 
 pub external type ListenSocket
 

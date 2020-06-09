@@ -3,7 +3,6 @@ import gleam/list
 import gleam/option.{Some}
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
-import midas_utils
 
 pub type Messages(m, c) {
   StartChild(From(Pid(m)), c)

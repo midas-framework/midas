@@ -1,7 +1,6 @@
 import net/tcp
 import net/http
 import gleam/should
-import midas_utils
 
 //
 // pub external fn read_http(Socket, Int) -> Result(String, Nil) =

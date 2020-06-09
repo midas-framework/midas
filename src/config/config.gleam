@@ -3,7 +3,6 @@ import gleam/list
 import gleam/map.{Map}
 import gleam/option.{Some, None}
 import gleam/result
-import midas_utils
 
 type ENV =
   Map(String, String)
