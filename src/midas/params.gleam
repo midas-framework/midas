@@ -1,10 +1,10 @@
 //// Handle untrusted input at your system boundaries.
 ////
-////    import midas/params
+////    import midas/params.{required, boolean, optional, as_string, as_integer, Trim, MinLength, MaxLength, Min}
 ////
-////    let name = required(form, "name", as_string(_, [MinLength(2), MaxLength(20)]))
+////    try name = required(form, "name", as_string(_, [Trim, MinLength(2), MaxLength(20)]))
 ////    let mailing_list = boolean(form, "mailing_list")
-////    let age = optional(form, "age", as_integer(_, [Min(0)]))
+////    try age = optional(form, "age", as_integer(_, [Min(0)]))
 ////
 //// This module works on lists of string pairs,
 //// as this data structure can represent data where the order is important or not.
