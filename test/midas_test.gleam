@@ -3,7 +3,7 @@ import gleam/uri
 import midas
 import gleam/http
 import gleam/http.{Request, Response, Get}
-import net/tcp
+import midas/net/tcp
 import gleam/should
 
 fn handle_request(request) {

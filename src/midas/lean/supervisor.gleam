@@ -1,7 +1,7 @@
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import process/supervisor/rest_for_one
-import net/http
+import midas/net/http
 import midas/lean/server_supervisor
 import midas/lean/governor_supervisor
 

@@ -1,5 +1,5 @@
-import net/tcp
-import net/http
+import midas/net/tcp
+import midas/net/http
 import gleam/should
 
 //

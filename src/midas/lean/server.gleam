@@ -8,7 +8,7 @@ import gleam/uri.{Uri}
 import gleam/http
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
-import net/http as wire
+import midas/net/http as wire
 
 fn parse_method(method_string) -> Result(http.Method, Nil) {
   case method_string {
