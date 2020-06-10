@@ -20,6 +20,7 @@
 //// - Should we offer a pop version so that you can test for unused keys.
 
 import gleam/list
+import gleam/option.{Some, None}
 import gleam/result
 
 /// Possible reasons for a field to be invalid.
@@ -45,4 +46,33 @@ pub fn required(from form, get key, cast) {
   try raw = find(form, key)
   cast(raw)
   |> result.map_error(CastFailure(key, _))
+}
+
+/// Fetch an optional value from the associated key.
+///
+/// This can return a `CastFailure` error, when a value is present but the cast function errors.
+/// To ignore cast errors unwrap the result, e.g.
+///
+///    let foo = params.optional(form, "foo", Ok) |> result.unwrap(None)
+pub fn optional(from form, get key, cast) {
+  case find(form, key) {
+    Ok(raw) -> case cast(raw) {
+      Ok(value) -> Ok(Some(value))
+      Error(reason) -> Error(CastFailure(key, reason))
+    }
+    Error(Missing(_key)) -> Ok(None)
+  }
+}
+
+/// Fetch an overridable value from the associated key, with a fallback when key not present in data.
+///
+/// This can return a `CastFailure` error, when a value is present but the cast function errors.
+pub fn overridable(from form, get key, cast, or fallback) {
+  case find(form, key) {
+    Ok(raw) -> case cast(raw) {
+      Ok(value) -> Ok(value)
+      Error(reason) -> Error(CastFailure(key, reason))
+    }
+    Error(Missing(_key)) -> Ok(fallback)
+  }
 }
