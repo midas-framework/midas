@@ -76,3 +76,25 @@ pub fn overridable(from form, get key, cast, or fallback) {
     Error(Missing(_key)) -> Ok(fallback)
   }
 }
+
+/// Returns true if the given key is present.
+///
+/// NOTE: This function is different to others in the module,
+/// an empty string associated with a given key will still return `True`.
+pub fn boolean(form, key) {
+  case list.key_find(form, key) {
+    Ok(_) -> True
+    Error(_) -> False
+  }
+}
+
+/// Check that a value is not present in the data.
+///
+/// Useful for indicating fields that might be provided but are unsupported.
+/// If there is a value for the key a `CastFailure` will be returned as the reason for the error.
+pub fn disallowed(from form, get key, reason) {
+  case find(form, key) {
+    Ok(raw) -> Error(CastFailure(key, reason))
+    Error(Missing(_key)) -> Ok(Nil)
+  }
+}
