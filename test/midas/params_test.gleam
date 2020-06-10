@@ -1,5 +1,5 @@
 import gleam/option.{Some, None}
-import midas/params.{Missing, CastFailure}
+import midas/params.{Missing, CastFailure, as_string, as_integer, Trim, MinLength, MaxLength, Allow, Disallow, Min, Max}
 import gleam/should
 
 pub fn required_param_test() {
@@ -82,4 +82,72 @@ pub fn disallowed_param_test() {
   [tuple("foo", "bar")]
   |> params.disallowed("foo", "unsupported")
   |> should.equal(Error(CastFailure("foo", "unsupported")))
+}
+
+pub fn as_string_test() {
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, [MinLength(4)]))
+  |> should.equal(Error(CastFailure("foo", "less than minimum length of 4")))
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, [MaxLength(2)]))
+  |> should.equal(Error(CastFailure("foo", "greater than maximum length of 2")))
+
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, [Allow(["other"])]))
+  |> should.equal(Error(CastFailure("foo", "not an allowed value")))
+
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, [Disallow(["bar"])]))
+  |> should.equal(Error(CastFailure("foo", "is a disallowed value")))
+
+  // test can pass through validations
+  let validations = [
+      Allow(["bar"]),
+      Disallow(["other"]),
+      MinLength(2),
+      MaxLength(4),
+    ]
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, validations))
+  |> should.equal(Ok("bar"))
+
+  // test runs all validations
+  let validations = [
+      Allow(["bar"]),
+      Disallow(["other"]),
+      MinLength(2),
+      MaxLength(2),
+    ]
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_string(_, validations))
+  |> should.equal(Error(CastFailure("foo", "greater than maximum length of 2")))
+
+  [tuple("foo", "  bar   ")]
+  |> params.required("foo", as_string(_, [Trim, MaxLength(3)]))
+  |> should.equal(Ok("bar"))
+}
+
+pub fn as_integer_test() {
+  [tuple("foo", "4")]
+  |> params.required("foo", as_integer(_, [Min(5)]))
+  |> should.equal(Error(CastFailure("foo", "less than minimum of 5")))
+
+  [tuple("foo", "4")]
+  |> params.required("foo", as_integer(_, [Max(3)]))
+  |> should.equal(Error(CastFailure("foo", "greater than maximum of 3")))
+
+  [tuple("foo", "4")]
+  |> params.required("foo", as_integer(_, []))
+  |> should.equal(Ok(4))
+  [tuple("foo", " 4  ")]
+  |> params.required("foo", as_integer(_, []))
+  |> should.equal(Ok(4))
+
+  [tuple("foo", "4.0")]
+  |> params.required("foo", as_integer(_, []))
+  |> should.equal(Error(CastFailure("foo", "not an integer value")))
+
+  [tuple("foo", "bar")]
+  |> params.required("foo", as_integer(_, []))
+  |> should.equal(Error(CastFailure("foo", "not an integer value")))
 }

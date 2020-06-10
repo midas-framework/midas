@@ -19,9 +19,11 @@
 ////   Several functions can be parameterised but the as functions probably can't
 //// - Should we offer a pop version so that you can test for unused keys.
 
+import gleam/int
 import gleam/list
 import gleam/option.{Some, None}
 import gleam/result
+import gleam/string
 
 /// Possible reasons for a field to be invalid.
 pub type Invalid(a) {
@@ -96,5 +98,92 @@ pub fn disallowed(from form, get key, reason) {
   case find(form, key) {
     Ok(raw) -> Error(CastFailure(key, reason))
     Error(Missing(_key)) -> Ok(Nil)
+  }
+}
+
+/// Validation rules that may be applied to strings.
+///
+/// Rules are applied in order, Trim should normally be first in the list.
+pub type StringValidations {
+  Trim
+  Allow(List(String))
+  Disallow(List(String))
+  MinLength(Int)
+  MaxLength(Int)
+}
+
+// TODO pattern or Ascii, Alphanumeric
+fn run_string_validation(validation, raw) {
+  case validation {
+    Trim -> Ok(string.trim(raw))
+    Allow(allowed) -> case list.contains(allowed, raw) {
+      True -> Ok(raw)
+      False -> Error("not an allowed value")
+    }
+    MinLength(min) -> case string.length(raw) >= min {
+      True -> Ok(raw)
+      False -> Error(
+        string.append("less than minimum length of ", int.to_string(min)),
+      )
+    }
+    MaxLength(max) -> case string.length(raw) <= max {
+      True -> Ok(raw)
+      False -> Error(
+        string.append("greater than maximum length of ", int.to_string(max)),
+      )
+    }
+    Disallow(disallowed) -> case list.contains(disallowed, raw) {
+      True -> Error("is a disallowed value")
+      False -> Ok(raw)
+    }
+  }
+}
+
+/// Cast an input value as a string that obeys the given validation rules
+pub fn as_string(raw, validations) {
+  case validations {
+    [] -> Ok(raw)
+    [validation, ..rest] -> {
+      try raw = run_string_validation(validation, raw)
+      as_string(raw, rest)
+    }
+  }
+}
+
+// should be possible to reuse for floats
+pub type NumberValidations {
+  Min(Int)
+  Max(Int)
+}
+
+fn run_number_validation(validation, number) {
+  case validation {
+    Min(min) -> case number >= min {
+      True -> Ok(number)
+      False -> Error(string.append("less than minimum of ", int.to_string(min)))
+    }
+    Max(max) -> case number <= max {
+      True -> Ok(number)
+      False -> Error(
+        string.append("greater than maximum of ", int.to_string(max)),
+      )
+    }
+  }
+}
+
+fn run_number_validations(number, validations) {
+  case validations {
+    [] -> Ok(number)
+    [validation, ..rest] -> {
+      try number = run_number_validation(validation, number)
+      run_number_validations(number, rest)
+    }
+  }
+}
+
+pub fn as_integer(raw, validations) {
+  case int.parse(string.trim(raw)) {
+    Ok(number) -> run_number_validations(number, validations)
+    Error(Nil) -> Error("not an integer value")
   }
 }
