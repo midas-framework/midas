@@ -1,5 +1,11 @@
 //// Handle untrusted input at your system boundaries.
 ////
+////    import midas/params
+////
+////    let name = required(form, "name", as_string(_, [MinLength(2), MaxLength(20)]))
+////    let mailing_list = boolean(form, "mailing_list")
+////    let age = optional(form, "age", as_integer(_, [Min(0)]))
+////
 //// This module works on lists of string pairs,
 //// as this data structure can represent data where the order is important or not.
 ////
@@ -18,6 +24,11 @@
 //// - Should the raw data structure be binaries not strings,
 ////   Several functions can be parameterised but the as functions probably can't
 //// - Should we offer a pop version so that you can test for unused keys.
+//// - Should there be more built in type validators.
+////   - as_iso8601_data
+////   - as_iso8601_datatime
+////   - as_email
+////   - as_url absolute, secure(true, false), local(true false)
 
 import gleam/int
 import gleam/list
@@ -151,6 +162,9 @@ pub fn as_string(raw, validations) {
 }
 
 // should be possible to reuse for floats
+/// Validation rules that may be applied to integers.
+///
+/// Rules are applied in order
 pub type NumberValidations {
   Min(Int)
   Max(Int)
@@ -181,6 +195,7 @@ fn run_number_validations(number, validations) {
   }
 }
 
+/// Cast an input value as an integer that obeys the given validation rules
 pub fn as_integer(raw, validations) {
   case int.parse(string.trim(raw)) {
     Ok(number) -> run_number_validations(number, validations)
