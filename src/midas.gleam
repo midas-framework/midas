@@ -3,7 +3,7 @@ import gleam/result
 import gleam/http.{Request, Response}
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
-import magpie/supervisor
+import midas/lean/supervisor
 
 pub fn spawn_link(handler: fn(Request(Iodata)) -> Response(Iodata), port: Int) {
   supervisor.spawn_link(handler, port)
