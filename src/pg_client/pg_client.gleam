@@ -2,7 +2,6 @@ import gleam/dynamic.{Dynamic}
 import gleam/option.{Some, None}
 import gleam/string
 import gleam/uri
-
 import process/process.{Pid}
 import utils/charlist.{Charlist}
 
