@@ -84,8 +84,7 @@ fn recv(socket: Socket, timeout: Int) {
 pub external fn send(Socket, String) -> Result(Nil, Nil) =
   "net_http_native" "send"
 
-// TODO private
-pub type HttpURI {
+type HttpURI {
   AbsPath(String)
 }
 
@@ -154,9 +153,9 @@ fn do_read_request_head(socket, line_timeout, head_by) {
         Ok(m) if m == trace_atom -> http.Trace
         Error(_) -> case dynamic.string(method) {
           Ok("PATCH") -> http.Patch
+          Ok(other) -> http.Other(other)
         }
       }
-      // TODO other method
       case do_read_headers(socket, line_timeout, head_by, []) {
         Ok(headers) -> Ok(tuple(method, http_uri, headers))
         Error(x) -> Error(x)
@@ -280,7 +279,7 @@ pub fn read_body(socket, content_length, timeout) {
   }
 }
 
-// TODO chunked
+// Note this does not handle transfer encoding chunked.
 pub fn read_request(socket, options) {
   try tuple(request_head, headers) = read_request_head(socket, options)
   let content_length = result.unwrap(

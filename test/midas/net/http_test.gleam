@@ -79,7 +79,7 @@ pub fn read_request_starting_with_empty_lines_test() {
 }
 
 // erlang decode packet doesn't handle patch
-pub fn read_http_request_unknown_method_test() {
+pub fn read_http_request_patch_test() {
   assert Ok(listen_socket) = http.listen(0)
   assert Ok(port) = http.port(listen_socket)
 
@@ -89,6 +89,17 @@ pub fn read_http_request_unknown_method_test() {
   let Ok(server_socket) = http.accept(listen_socket)
   assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
   should.equal(head.method, gleam_http.Patch)
+}
+pub fn read_http_request_unknown_method_test() {
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
+
+  let Ok(socket) = tcp.connect("localhost", port)
+  let Ok(_) = tcp.send(socket, "RANDOM / HTTP/1.1\r\nhost: example.test\r\n\r\n")
+
+  let Ok(server_socket) = http.accept(listen_socket)
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.method, gleam_http.Other("RANDOM"))
 }
 
 pub fn invalid_start_line_test() {

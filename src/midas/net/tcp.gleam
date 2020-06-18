@@ -11,7 +11,6 @@ type InetOpts {
   Active(Bool)
 }
 
-// TODO List of Options
 external fn do_connect(Charlist, Int, List(InetOpts)) -> Result(Socket, Nil) =
   "gen_tcp" "connect"
 
