@@ -1,7 +1,9 @@
 import gleam/atom.{Atom}
 import gleam/dynamic.{Dynamic}
+import gleam/int
 import gleam/io
 import gleam/list
+import gleam/option.{Option, Some, None}
 import gleam/result
 import gleam/string
 import gleam/http
@@ -54,6 +56,8 @@ external fn erl_recv(
 pub type ReadError {
   InvalidStartLine(String)
   InvalidHeaderLine(String)
+  MissingHostHeader
+  InvalidHostHeader
   Closed
   Timeout
   InetError(Atom)
@@ -78,10 +82,10 @@ fn recv(socket: Socket, timeout: Int) {
 pub external fn send(Socket, String) -> Result(Nil, Nil) =
   "net_http_native" "send"
 
+// TODO private
 pub type HttpURI {
   AbsPath(String)
 }
-
 
 external fn monotonic_time(Atom) -> Int =
   "erlang" "monotonic_time"
@@ -99,23 +103,19 @@ fn check_deadline(deadline) {
 
 // Decode packet turns some methods/header fields into atoms
 fn do_read_headers(socket, line_timeout, complete_by, headers) {
-
   try _ = check_deadline(complete_by)
   case recv(socket, line_timeout) {
     Ok(HttpEoh) -> Ok(list.reverse(headers))
     Ok(HttpHeader(_, name, _, value)) -> {
-
-        let name = case dynamic.atom(name) {
-            Ok(name) -> atom.to_string(name)
-            Error(_) -> {
-                assert Ok(name) = dynamic.string(name)
-                name
-            }
+      let name = case dynamic.atom(name) {
+        Ok(name) -> atom.to_string(name)
+        Error(_) -> {
+          assert Ok(name) = dynamic.string(name)
+          name
         }
-      let header = tuple(
-          name,
-          value,
-        )
+      }
+      // NOTE erlang decode packet will uppercase even if sent lowercase
+      let header = tuple(string.lowercase(name), value)
       let headers = [header, ..headers]
       do_read_headers(socket, line_timeout, complete_by, headers)
     }
@@ -130,30 +130,29 @@ pub type ReadOptions {
 }
 
 fn do_read_request_head(socket, line_timeout, complete_by) {
-    let options_atom = atom.create_from_string("OPTIONS")
-    let get_atom = atom.create_from_string("GET")
-    let head_atom = atom.create_from_string("HEAD")
-    let post_atom = atom.create_from_string("POST")
-    let put_atom = atom.create_from_string("PUT")
-    let delete_atom = atom.create_from_string("DELETE")
-    let trace_atom = atom.create_from_string("TRACE")
+  let options_atom = atom.create_from_string("OPTIONS")
+  let get_atom = atom.create_from_string("GET")
+  let head_atom = atom.create_from_string("HEAD")
+  let post_atom = atom.create_from_string("POST")
+  let put_atom = atom.create_from_string("PUT")
+  let delete_atom = atom.create_from_string("DELETE")
+  let trace_atom = atom.create_from_string("TRACE")
   try _ = check_deadline(complete_by)
   case recv(socket, line_timeout) {
     Ok(HttpRequest(method, http_uri, tuple(1, 1))) -> {
-        let method = case dynamic.atom(method) {
-            Ok(m) if m == options_atom -> http.Options
-            Ok(m) if m == get_atom -> http.Get
-            Ok(m) if m == head_atom -> http.Head
-            Ok(m) if m == post_atom -> http.Post
-            Ok(m) if m == put_atom -> http.Put
-            Ok(m) if m == delete_atom -> http.Delete
-            Ok(m) if m == trace_atom -> http.Trace
-            Error(_) -> case dynamic.string(method) {
-                Ok("PATCH") -> http.Patch
-                // TODO other method
-            }
-
+      let method = case dynamic.atom(method) {
+        Ok(m) if m == options_atom -> http.Options
+        Ok(m) if m == get_atom -> http.Get
+        Ok(m) if m == head_atom -> http.Head
+        Ok(m) if m == post_atom -> http.Post
+        Ok(m) if m == put_atom -> http.Put
+        Ok(m) if m == delete_atom -> http.Delete
+        Ok(m) if m == trace_atom -> http.Trace
+        Error(_) -> case dynamic.string(method) {
+          Ok("PATCH") -> http.Patch
         }
+      }
+      // TODO other method
       case do_read_headers(socket, line_timeout, complete_by, []) {
         Ok(headers) -> Ok(tuple(method, http_uri, headers))
         Error(x) -> Error(x)
@@ -164,6 +163,45 @@ fn do_read_request_head(socket, line_timeout, complete_by) {
       False -> Error(InvalidStartLine(line))
     }
     Error(x) -> Error(x)
+  }
+}
+
+pub external fn binary_to_list(String) -> List(Int) =
+  "erlang" "binary_to_list"
+
+fn charachter_unreserved(char) {
+  case char {
+    // a-z
+    c if 97 <= c && c <= 122 -> True
+    // A-Z
+    c if 65 <= c && c <= 90 -> True
+    // 0-9
+    c if 48 <= c && c <= 57 -> True
+    // -
+    c if c == 45 -> True
+    // .
+    c if c == 46 -> True
+    // _
+    c if c == 95 -> True
+    // ~
+    c if c == 126 -> True
+    _ -> False
+  }
+}
+
+// FIXME add support for IP6 addresses
+// https://github.com/ninenines/cowlib/blob/master/src/cow_http_hd.erl#L2097
+pub fn parse_host(raw: String) -> Result(tuple(String, Option(Int)), Nil) {
+  try tuple(host, port) = case string.split_once(raw, ":") {
+    Ok(tuple(host, port)) -> case int.parse(port) {
+      Ok(port) -> Ok(tuple(host, Some(port)))
+      Error(Nil) -> Error(Nil)
+    }
+    Error(Nil) -> Ok(tuple(raw, None))
+  }
+  case list.all(binary_to_list(host), charachter_unreserved) {
+    True -> Ok(tuple(string.lowercase(host), port))
+    False -> Error(Nil)
   }
 }
 
@@ -190,7 +228,19 @@ pub fn read_request_head(socket, options) {
     |> result.unwrap(30000)
   let complete_by = now() + completion_timeout
 
-  do_read_request_head(socket, line_timeout, complete_by)
+  try raw = do_read_request_head(socket, line_timeout, complete_by)
+
+  // parse host
+  case raw {
+    tuple(method, AbsPath(raw_path), raw_headers) -> case raw_headers {
+      [tuple("host", host), ..headers] -> {
+        try _ = parse_host(host)
+          |> result.map_error(fn(_) { InvalidHostHeader })
+        Ok(raw)
+      }
+      _ -> Error(MissingHostHeader)
+    }
+  }
 }
 
 pub external fn read_body(

@@ -10,7 +10,6 @@ import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas/net/http as wire
 
-
 pub fn process_request_head(method, target, raw_headers) {
   let wire.AbsPath(raw_path) = target
 
