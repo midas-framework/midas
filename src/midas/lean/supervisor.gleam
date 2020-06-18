@@ -14,6 +14,7 @@ fn init(handler, port) {
   )
 }
 
+// TODO take the locket, but a start link that creates it
 pub fn spawn_link(handler, port: Int) -> Pid(rest_for_one.Messages(a)) {
   rest_for_one.spawn_link(fn() { init(handler, port) })
 }

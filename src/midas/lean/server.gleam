@@ -10,28 +10,9 @@ import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas/net/http as wire
 
-fn parse_method(method_string) -> Result(http.Method, Nil) {
-  case method_string {
-    "CONNECT" -> Ok(http.Connect)
-    "DELETE" -> Ok(http.Delete)
-    "GET" -> Ok(http.Get)
-    "HEAD" -> Ok(http.Head)
-    "OPTIONS" -> Ok(http.Options)
-    "PATCH" -> Ok(http.Patch)
-    "POST" -> Ok(http.Post)
-    "PUT" -> Ok(http.Put)
-    "TRACE" -> Ok(http.Trace)
-    _ -> Error(Nil)
-  }
-}
 
-// TODO reanme supervisor -> endpoint
-fn read_request(socket) {
-  // TODO https://erlang.org/doc/man/timer.html#exit_after-2
-  let Ok(
-    tuple(method_string, wire.AbsPath(raw_path), raw_headers),
-  ) = wire.read_request_head(socket, [])
-  let Ok(method) = parse_method(method_string)
+pub fn process_request_head(method, target, raw_headers) {
+  let wire.AbsPath(raw_path) = target
 
   let Ok(
     Uri(
@@ -58,6 +39,25 @@ fn read_request(socket) {
     ),
   ) = uri.parse(string.append("//", authority))
 
+  let request_head = http.RequestHead(
+    method: method,
+    host: host,
+    port: port,
+    path: path,
+    query: query,
+  )
+  tuple(request_head, headers)
+}
+
+// TODO reanme supervisor -> endpoint
+fn read_request(socket) {
+  let Ok(
+    tuple(method_string, target, raw_headers),
+  ) = wire.read_request_head(socket, [])
+  let tuple(
+    request_head,
+    headers,
+  ) = process_request_head(method_string, target, raw_headers)
   let content_length = result.unwrap(
     list.key_find(headers, "content-length"),
     or: "0",
@@ -70,19 +70,7 @@ fn read_request(socket) {
       body
     }
   }
-  Ok(
-    http.Message(
-      http.RequestHead(
-        method: method,
-        host: host,
-        port: port,
-        path: path,
-        query: query,
-      ),
-      headers,
-      iodata.from_strings([body]),
-    ),
-  )
+  Ok(http.Message(request_head, headers, iodata.from_strings([body])))
 }
 
 // completely ignore reson phrases

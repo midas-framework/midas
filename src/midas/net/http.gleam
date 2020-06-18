@@ -4,6 +4,7 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import gleam/http
 
 // This is a listen socket of assumed type httpbin
 pub external type ListenSocket
@@ -14,8 +15,8 @@ external type Reserved
 
 type HttpPacket {
   // method is a string because erl returns upcase atoms
-  HttpRequest(AtomOrBinary, HttpURI, tuple(Int, Int))
-  HttpHeader(Int, AtomOrBinary, Reserved, String)
+  HttpRequest(Dynamic, HttpURI, tuple(Int, Int))
+  HttpHeader(Int, Dynamic, Reserved, String)
   HttpEoh
   HttpError(String)
 }
@@ -81,10 +82,6 @@ pub type HttpURI {
   AbsPath(String)
 }
 
-external type AtomOrBinary
-
-external fn atom_or_binary_to_string(AtomOrBinary) -> String =
-  "net_http_native" "atom_or_binary_to_string"
 
 external fn monotonic_time(Atom) -> Int =
   "erlang" "monotonic_time"
@@ -102,12 +99,21 @@ fn check_deadline(deadline) {
 
 // Decode packet turns some methods/header fields into atoms
 fn do_read_headers(socket, line_timeout, complete_by, headers) {
+
   try _ = check_deadline(complete_by)
   case recv(socket, line_timeout) {
     Ok(HttpEoh) -> Ok(list.reverse(headers))
     Ok(HttpHeader(_, name, _, value)) -> {
+
+        let name = case dynamic.atom(name) {
+            Ok(name) -> atom.to_string(name)
+            Error(_) -> {
+                assert Ok(name) = dynamic.string(name)
+                name
+            }
+        }
       let header = tuple(
-          string.lowercase(atom_or_binary_to_string(name)),
+          name,
           value,
         )
       let headers = [header, ..headers]
@@ -124,10 +130,30 @@ pub type ReadOptions {
 }
 
 fn do_read_request_head(socket, line_timeout, complete_by) {
+    let options_atom = atom.create_from_string("OPTIONS")
+    let get_atom = atom.create_from_string("GET")
+    let head_atom = atom.create_from_string("HEAD")
+    let post_atom = atom.create_from_string("POST")
+    let put_atom = atom.create_from_string("PUT")
+    let delete_atom = atom.create_from_string("DELETE")
+    let trace_atom = atom.create_from_string("TRACE")
   try _ = check_deadline(complete_by)
   case recv(socket, line_timeout) {
     Ok(HttpRequest(method, http_uri, tuple(1, 1))) -> {
-      let method = atom_or_binary_to_string(method)
+        let method = case dynamic.atom(method) {
+            Ok(m) if m == options_atom -> http.Options
+            Ok(m) if m == get_atom -> http.Get
+            Ok(m) if m == head_atom -> http.Head
+            Ok(m) if m == post_atom -> http.Post
+            Ok(m) if m == put_atom -> http.Put
+            Ok(m) if m == delete_atom -> http.Delete
+            Ok(m) if m == trace_atom -> http.Trace
+            Error(_) -> case dynamic.string(method) {
+                Ok("PATCH") -> http.Patch
+                // TODO other method
+            }
+
+        }
       case do_read_headers(socket, line_timeout, complete_by, []) {
         Ok(headers) -> Ok(tuple(method, http_uri, headers))
         Error(x) -> Error(x)

@@ -3,6 +3,7 @@ import gleam/io
 import gleam/list
 import gleam/string
 import process/process
+import gleam/http as gleam_http
 import midas/net/tcp
 import midas/net/http
 import gleam/should
@@ -20,7 +21,7 @@ pub fn read_request_from_single_packet_test() {
     tuple(method, path, headers),
   ) = http.read_request_head(server_socket, [])
   // TODO make this atom
-  should.equal(method, "GET")
+  should.equal(method, gleam_http.Get)
   should.equal(path, http.AbsPath("/"))
   should.equal(headers, [tuple("accept", "text/plain"), tuple("x-foo", "bar")])
 }
@@ -58,7 +59,7 @@ pub fn read_request_from_multiple_packets_test() {
     tuple(method, path, headers),
   ) = http.read_request_head(server_socket, [])
   // TODO make this atom
-  should.equal(method, "GET")
+  should.equal(method, gleam_http.Get)
   should.equal(path, http.AbsPath("/"))
   should.equal(headers, [tuple("accept", "text/plain"), tuple("x-foo", "bar")])
 }
@@ -75,7 +76,7 @@ pub fn read_request_starting_with_empty_lines_test() {
   let Ok(
     tuple(method, path, headers),
   ) = http.read_request_head(server_socket, [])
-  should.equal(method, "GET")
+  should.equal(method, gleam_http.Get)
   should.equal(path, http.AbsPath("/"))
   should.equal(headers, [tuple("accept", "text/plain"), tuple("x-foo", "bar")])
 }
@@ -92,7 +93,7 @@ pub fn read_http_request_unknown_method_test() {
   let Ok(
     tuple(method, _path, _headers),
   ) = http.read_request_head(server_socket, [])
-  should.equal(method, "PATCH")
+  should.equal(method, gleam_http.Patch)
 }
 
 pub fn invalid_start_line_test() {
