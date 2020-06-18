@@ -5,7 +5,10 @@ import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas/lean/endpoint
 
-pub fn spawn_link(handler: fn(Request(Iodata)) -> Response(Iodata), listen_socket) {
+pub fn spawn_link(
+  handler: fn(Request(Iodata)) -> Response(Iodata),
+  listen_socket,
+) {
   endpoint.spawn_link(handler, listen_socket)
 }
 

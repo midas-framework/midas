@@ -23,7 +23,7 @@ pub fn listing_children_test() {
   should.equal(Ok([c1, c2]), set_supervisor.which_children(supervisor))
   process.send(c1, Nil)
 
-  // TODO remove
+  // Sleep needed for message to arrive, do with a monitor instead
   process.sleep(100)
   should.equal(Ok([c2]), set_supervisor.which_children(supervisor))
 }

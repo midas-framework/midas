@@ -1,9 +1,11 @@
+import gleam/io
 import gleam/option.{Some, None}
 import gleam/uri
 import midas
-import gleam/http
+import process/process
 import gleam/http.{Request, Response, Get}
 import midas/net/tcp
+import midas/net/http as net_http
 import gleam/should
 
 fn handle_request(request) {
@@ -21,28 +23,27 @@ fn handle_request(request) {
 }
 
 pub fn echo_body_test() {
-  assert Ok(_) = midas.start_link(handle_request, 10001)
+  assert Ok(listen_socket) = net_http.listen(0)
+  let Ok(port) = net_http.port(listen_socket)
+  let Ok(socket) = tcp.connect("localhost", port)
+  let endpoint_pid = midas.spawn_link(handle_request, listen_socket)
 
-  let Ok(socket) = tcp.connect("localhost", 10001)
-  let Ok(
-    _,
-  ) = tcp.send(
-    socket,
-    "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-length: 14\r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
-  )
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-length: 14\r\ncontent-type: text/unusual\r\n\r\nHello, Server!"
+  let Ok(_) = tcp.send(socket, message)
   let Ok(response) = tcp.read_blob(socket, 0, 100)
   should.equal(
     response,
     "HTTP/1.1 200 \r\nconnection: close\r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
   )
 
-  let Ok(socket) = tcp.connect("localhost", 10001)
-  let Ok(
-    _,
-  ) = tcp.send(
-    socket,
-    "GET /echo HTTP/1.1\r\nconnection: close\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n",
-  )
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET /echo HTTP/1.1\r\nhost: midas.test\r\nconnection: close\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n"
+  let Ok(_) = tcp.send(socket, message)
+  let Ok(port) = net_http.port(listen_socket)
   let Ok(response) = tcp.read_blob(socket, 0, 100)
-  should.equal(response, "HTTP/1.1 200 \r\ncontent-type: text/unusual\r\n\r\n")
+  should.equal(
+    response,
+    "HTTP/1.1 200 \r\nconnection: close\r\ncontent-type: text/unusual\r\n\r\n",
+  )
 }

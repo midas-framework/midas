@@ -30,7 +30,7 @@ pub external fn listen(Int) -> Result(ListenSocket, Nil) =
 pub external fn port(ListenSocket) -> Result(Int, Dynamic) =
   "inet" "port"
 
-pub external fn accept(ListenSocket) -> Result(Socket, Nil) =
+pub external fn accept(ListenSocket) -> Result(Socket, Atom) =
   "gen_tcp" "accept"
 
 external fn erl_close(Socket) -> Atom =

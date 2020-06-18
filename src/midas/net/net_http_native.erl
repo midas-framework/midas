@@ -17,5 +17,5 @@ read_http(Socket, Timeout) ->
 send(Socket, String) ->
   case gen_tcp:send(Socket, String) of
     ok -> {ok, nil};
-    {error, reason} -> {error, reason}
+    {error, Reason} -> {error, Reason}
   end.

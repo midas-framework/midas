@@ -1,5 +1,7 @@
+import gleam/atom
 import gleam/list
 import gleam/int
+import gleam/io
 import gleam/iodata
 import gleam/option.{Some, None}
 import gleam/result
@@ -31,23 +33,39 @@ fn response_to_string(response) {
 }
 
 pub type Accept {
-  Accept(From(Nil))
+  Accept(From(Bool))
 }
 
 fn run(receive, handler, listen_socket) {
+  let closed_atom = atom.create_from_string("closed")
   assert Some(Accept(from)) = receive(Infinity)
-  assert Ok(socket) = wire.accept(listen_socket)
-  process.reply(from, Nil)
-  let request = wire.read_request(socket, [])
-  try request = request
-  let response = handler(request)
-  wire.send(socket, response_to_string(response))
+  case wire.accept(listen_socket) {
+    Ok(socket) -> {
+      let Nil = process.reply(from, True)
+      case wire.read_request(socket, []) {
+        Ok(request) -> {
+          let response = handler(request)
+          case wire.send(socket, response_to_string(response)) {
+            Ok(Nil) -> Nil
+            Error(reason) -> {
+              io.debug(reason)
+              Nil
+            }
+          }
+        }
+        Error(reason) -> {
+          io.debug(reason)
+          Nil
+        }
+      }
+    }
+    Error(reason) if reason == closed_atom -> {
+      let Nil = process.reply(from, False)
+      Nil
+    }
+  }
 }
 
 pub fn spawn_link(handler, listen_socket) {
   process.spawn_link(run(_, handler, listen_socket))
-}
-
-pub fn accept(pid) {
-  process.call(pid, Accept(_), Infinity)
 }

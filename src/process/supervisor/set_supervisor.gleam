@@ -1,4 +1,5 @@
 // Other Possible name: Fleet Clone, Copy, Replica, Homogenious
+import gleam/io
 import gleam/list
 import gleam/option.{Some}
 import process/process
@@ -7,7 +8,7 @@ import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, 
 pub type Messages(m, c) {
   StartChild(From(Pid(m)), c)
   WhichChildren(From(List(Pid(m))))
-  EXIT(BarePid, ExitReason)
+  Exit(BarePid, ExitReason)
 }
 
 fn pop(haystack, predicate, done) {
@@ -21,6 +22,7 @@ fn pop(haystack, predicate, done) {
 }
 
 fn loop(receive, start_child, children) {
+    io.debug(start_child)
   case receive(Infinity) {
     // Could instead pass in a function that returns the right pid?
     Some(StartChild(from, config)) -> {
@@ -33,9 +35,7 @@ fn loop(receive, start_child, children) {
       process.reply(from, list.reverse(children))
       loop(receive, start_child, children)
     }
-    // TODO shouldn't be restarting servers
-    // Unless do the cheat and map 500 live servers.
-    Some(EXIT(down_pid, _)) -> {
+    Some(Exit(down_pid, process.Normal)) -> {
       let predicate = fn(pid) { process.bare(pid) == down_pid }
       let tuple(_found, children) = pop(children, predicate, [])
       loop(receive, start_child, children)

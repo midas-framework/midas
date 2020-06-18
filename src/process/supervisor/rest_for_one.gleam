@@ -96,12 +96,12 @@ fn child_pid(child) {
 
 pub type Messages(m) {
   WhichChildren(From(List(Pid(m))))
-  EXIT(BarePid, ExitReason)
+  Exit(BarePid, ExitReason)
 }
 
 fn loop(receive, specs, children) {
   case receive(Infinity) {
-    Some(EXIT(pid, _reason)) -> {
+    Some(Exit(pid, reason)) -> {
       let tuple(child1, child2, child3) = children
       let pid1 = child_pid(child1)
       let pid2 = child_pid(child2)
@@ -111,6 +111,7 @@ fn loop(receive, specs, children) {
         p if p == pid2 -> tuple(child1, Stopped, child3)
         p if p == pid3 -> tuple(child1, child2, Stopped)
       }
+      // TODO use the stop1 function to pass on down the line
       // p -> {
       //     // TODO handle parent pid, for the moment parents are simply killed.
       //     tuple(child1, child2, child3)
