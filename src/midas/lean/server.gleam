@@ -17,6 +17,7 @@ fn response_to_string(response) {
     headers: headers,
     body: body,
   ) = response
+  let headers = [tuple("connection", "close"), ..headers]
   let status_line = string.concat(["HTTP/1.1 ", int.to_string(status), " \r\n"])
   let response_head = list.fold(
     headers,
@@ -35,20 +36,17 @@ pub type Accept {
 }
 
 fn run(receive, handler, listen_socket) {
-  let Some(Accept(from)) = receive(Infinity)
-  let Ok(socket) = wire.accept(listen_socket)
+  assert Some(Accept(from)) = receive(Infinity)
+  assert Ok(socket) = wire.accept(listen_socket)
   process.reply(from, Nil)
-  let Ok(request) = wire.read_request(socket, [])
+  let request = wire.read_request(socket, [])
+  try request = request
   let response = handler(request)
-  let Ok(Nil) = wire.send(socket, response_to_string(response))
-  Nil
+  wire.send(socket, response_to_string(response))
 }
 
 pub fn spawn_link(handler, listen_socket) {
-  let pid = process.spawn_link(
-    fn(receive) { run(receive, handler, listen_socket) },
-  )
-  pid
+  process.spawn_link(run(_, handler, listen_socket))
 }
 
 pub fn accept(pid) {

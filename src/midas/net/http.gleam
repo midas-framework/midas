@@ -54,7 +54,7 @@ external fn erl_recv(
 //     InetError(Atom)
 // }
 // It's ok that recv uses this because it's private
-pub type ReadError {
+pub type NetError {
   InvalidStartLine(String)
   InvalidHeaderLine(String)
   MissingHostHeader
@@ -81,7 +81,7 @@ fn recv(socket: Socket, timeout: Int) {
   }
 }
 
-pub external fn send(Socket, String) -> Result(Nil, Nil) =
+pub external fn send(Socket, String) -> Result(Nil, NetError) =
   "net_http_native" "send"
 
 type HttpURI {
@@ -300,17 +300,18 @@ pub fn read_request(socket, options) {
   try body = case content_length {
     0 -> Ok("")
     length if length <= maximum_body_length -> {
-        let body_timeout = list.find_map(
-            options,
-            fn(option) {
-              case option {
-                BodyTimeout(body_timeout) -> Ok(body_timeout)
-                _ -> Error(Nil)
-              }
-            },
-          )
-          |> result.unwrap(30000)
-        read_body(socket, content_length, body_timeout)}
+      let body_timeout = list.find_map(
+          options,
+          fn(option) {
+            case option {
+              BodyTimeout(body_timeout) -> Ok(body_timeout)
+              _ -> Error(Nil)
+            }
+          },
+        )
+        |> result.unwrap(30000)
+      read_body(socket, content_length, body_timeout)
+    }
     _ -> Error(ContentLengthTooLarge)
   }
   Ok(http.Message(request_head, headers, iodata.from_strings([body])))

@@ -90,12 +90,15 @@ pub fn read_http_request_patch_test() {
   assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
   should.equal(head.method, gleam_http.Patch)
 }
+
 pub fn read_http_request_unknown_method_test() {
   assert Ok(listen_socket) = http.listen(0)
   assert Ok(port) = http.port(listen_socket)
 
   let Ok(socket) = tcp.connect("localhost", port)
-  let Ok(_) = tcp.send(socket, "RANDOM / HTTP/1.1\r\nhost: example.test\r\n\r\n")
+  let Ok(
+    _,
+  ) = tcp.send(socket, "RANDOM / HTTP/1.1\r\nhost: example.test\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
   assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
@@ -243,7 +246,6 @@ pub fn timeout_from_slow_request_test() {
   |> should.equal(Error(http.Timeout))
 }
 
-// TODO always send connection close, not a test here
 pub fn downcases_host_test() {
   assert Ok(listen_socket) = http.listen(0)
   assert Ok(port) = http.port(listen_socket)
@@ -368,33 +370,33 @@ pub fn connection_closed_in_body_length_test() {
 }
 
 pub fn body_timeout_length_test() {
-    assert Ok(listen_socket) = http.listen(0)
-    assert Ok(port) = http.port(listen_socket)
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
 
-    process.spawn_link(
-        fn(_receive) {
-            let Ok(socket) = tcp.connect("localhost", port)
-            let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, Wor"
-            let Ok(_) = tcp.send(socket, message)
-            process.sleep(1000)
-            let Ok(_) = tcp.send(socket, "ld!")
-            process.sleep(1000)
-        },
-    )
-    let Ok(server_socket) = http.accept(listen_socket)
-    http.read_request(server_socket, [http.BodyTimeout(200)])
-    |> should.equal(Error(http.Timeout))
+  process.spawn_link(
+    fn(_receive) {
+      let Ok(socket) = tcp.connect("localhost", port)
+      let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, Wor"
+      let Ok(_) = tcp.send(socket, message)
+      process.sleep(1000)
+      let Ok(_) = tcp.send(socket, "ld!")
+      process.sleep(1000)
+    },
+  )
+  let Ok(server_socket) = http.accept(listen_socket)
+  http.read_request(server_socket, [http.BodyTimeout(200)])
+  |> should.equal(Error(http.Timeout))
 }
 
 pub fn body_too_large_length_test() {
-    assert Ok(listen_socket) = http.listen(0)
-    assert Ok(port) = http.port(listen_socket)
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
 
-    let Ok(socket) = tcp.connect("localhost", port)
-    let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, World!"
-    let Ok(_) = tcp.send(socket, message)
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, World!"
+  let Ok(_) = tcp.send(socket, message)
 
-    let Ok(server_socket) = http.accept(listen_socket)
-    http.read_request(server_socket, [http.MaximumBodyLength(12)])
-    |> should.equal(Error(http.ContentLengthTooLarge))
+  let Ok(server_socket) = http.accept(listen_socket)
+  http.read_request(server_socket, [http.MaximumBodyLength(12)])
+  |> should.equal(Error(http.ContentLengthTooLarge))
 }
