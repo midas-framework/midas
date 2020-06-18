@@ -30,7 +30,7 @@ fn read_request(socket) {
   // TODO https://erlang.org/doc/man/timer.html#exit_after-2
   let Ok(
     tuple(method_string, wire.AbsPath(raw_path), raw_headers),
-  ) = wire.read_request_head(socket, 1000)
+  ) = wire.read_request_head(socket, [])
   let Ok(method) = parse_method(method_string)
 
   let Ok(

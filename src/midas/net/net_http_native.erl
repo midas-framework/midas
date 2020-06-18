@@ -1,6 +1,7 @@
 -module(net_http_native).
 -export([atom_or_binary_to_string/1, listen/1, read_body/3, read_http/2, send/2]).
 
+% TODO remove
 atom_or_binary_to_string(Atom) when is_atom(Atom) -> erlang:atom_to_binary(Atom, utf8);
 atom_or_binary_to_string(Binary) when is_binary(Binary) -> Binary.
 

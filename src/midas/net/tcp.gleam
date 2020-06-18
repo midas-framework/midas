@@ -1,3 +1,4 @@
+import gleam/atom.{Atom}
 import utils/charlist
 import utils/charlist.{Charlist}
 
@@ -32,4 +33,12 @@ pub external fn read_line(Socket, Int) -> Result(String, Nil) =
 
 pub external fn read_blob(Socket, Int, Int) -> Result(String, Nil) =
   "net_tcp_native" "read_blob"
+
 // Port to list and port info
+external fn erl_close(Socket) -> Atom =
+  "gen_tcp" "close"
+
+pub fn close(socket: Socket) -> Nil {
+  erl_close(socket)
+  Nil
+}
