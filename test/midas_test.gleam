@@ -21,7 +21,7 @@ fn handle_request(request) {
 }
 
 pub fn echo_body_test() {
-  midas.spawn_link(handle_request, 10001)
+  assert Ok(_) = midas.start_link(handle_request, 10001)
 
   let Ok(socket) = tcp.connect("localhost", 10001)
   let Ok(
@@ -33,7 +33,7 @@ pub fn echo_body_test() {
   let Ok(response) = tcp.read_blob(socket, 0, 100)
   should.equal(
     response,
-    "HTTP/1.1 200 \r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
+    "HTTP/1.1 200 \r\nconnection: close\r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
   )
 
   let Ok(socket) = tcp.connect("localhost", 10001)
@@ -41,7 +41,7 @@ pub fn echo_body_test() {
     _,
   ) = tcp.send(
     socket,
-    "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n",
+    "GET /echo HTTP/1.1\r\nconnection: close\r\nhost: midas.test\r\ncontent-type: text/unusual\r\n\r\n",
   )
   let Ok(response) = tcp.read_blob(socket, 0, 100)
   should.equal(response, "HTTP/1.1 200 \r\ncontent-type: text/unusual\r\n\r\n")

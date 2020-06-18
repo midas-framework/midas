@@ -10,7 +10,6 @@ import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
 import midas/net/http as wire
 
-// TODO reanme supervisor -> endpoint
 fn response_to_string(response) {
   let http.Message(
     head: http.ResponseHead(status),
