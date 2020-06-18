@@ -2,6 +2,7 @@ import gleam/atom.{Atom}
 import gleam/dynamic.{Dynamic}
 import gleam/int
 import gleam/io
+import gleam/iodata
 import gleam/list
 import gleam/option.{Option, Some, None}
 import gleam/result
@@ -58,6 +59,7 @@ pub type ReadError {
   InvalidHeaderLine(String)
   MissingHostHeader
   InvalidHostHeader
+  ContentLengthTooLarge
   Closed
   Timeout
   InetError(Atom)
@@ -102,8 +104,8 @@ fn check_deadline(deadline) {
 }
 
 // Decode packet turns some methods/header fields into atoms
-fn do_read_headers(socket, line_timeout, complete_by, headers) {
-  try _ = check_deadline(complete_by)
+fn do_read_headers(socket, line_timeout, head_by, headers) {
+  try _ = check_deadline(head_by)
   case recv(socket, line_timeout) {
     Ok(HttpEoh) -> Ok(list.reverse(headers))
     Ok(HttpHeader(_, name, _, value)) -> {
@@ -117,7 +119,7 @@ fn do_read_headers(socket, line_timeout, complete_by, headers) {
       // NOTE erlang decode packet will uppercase even if sent lowercase
       let header = tuple(string.lowercase(name), value)
       let headers = [header, ..headers]
-      do_read_headers(socket, line_timeout, complete_by, headers)
+      do_read_headers(socket, line_timeout, head_by, headers)
     }
     Ok(HttpError(line)) -> Error(InvalidHeaderLine(line))
     Error(x) -> Error(x)
@@ -125,11 +127,13 @@ fn do_read_headers(socket, line_timeout, complete_by, headers) {
 }
 
 pub type ReadOptions {
-  LineTimeout(Int)
-  CompletionTimeout(Int)
+  IdleTimeout(Int)
+  HeadTimeout(Int)
+  BodyTimeout(Int)
+  MaximumBodyLength(Int)
 }
 
-fn do_read_request_head(socket, line_timeout, complete_by) {
+fn do_read_request_head(socket, line_timeout, head_by) {
   let options_atom = atom.create_from_string("OPTIONS")
   let get_atom = atom.create_from_string("GET")
   let head_atom = atom.create_from_string("HEAD")
@@ -137,7 +141,7 @@ fn do_read_request_head(socket, line_timeout, complete_by) {
   let put_atom = atom.create_from_string("PUT")
   let delete_atom = atom.create_from_string("DELETE")
   let trace_atom = atom.create_from_string("TRACE")
-  try _ = check_deadline(complete_by)
+  try _ = check_deadline(head_by)
   case recv(socket, line_timeout) {
     Ok(HttpRequest(method, http_uri, tuple(1, 1))) -> {
       let method = case dynamic.atom(method) {
@@ -153,13 +157,13 @@ fn do_read_request_head(socket, line_timeout, complete_by) {
         }
       }
       // TODO other method
-      case do_read_headers(socket, line_timeout, complete_by, []) {
+      case do_read_headers(socket, line_timeout, head_by, []) {
         Ok(headers) -> Ok(tuple(method, http_uri, headers))
         Error(x) -> Error(x)
       }
     }
     Ok(HttpError(line)) -> case string.trim(line) == "" {
-      True -> do_read_request_head(socket, line_timeout, complete_by)
+      True -> do_read_request_head(socket, line_timeout, head_by)
       False -> Error(InvalidStartLine(line))
     }
     Error(x) -> Error(x)
@@ -210,42 +214,105 @@ pub fn read_request_head(socket, options) {
       options,
       fn(option) {
         case option {
-          LineTimeout(line_timeout) -> Ok(line_timeout)
+          IdleTimeout(line_timeout) -> Ok(line_timeout)
           _ -> Error(Nil)
         }
       },
     )
     |> result.unwrap(5000)
-  let completion_timeout = list.find_map(
+  let head_timeout = list.find_map(
       options,
       fn(option) {
         case option {
-          CompletionTimeout(completion_timeout) -> Ok(completion_timeout)
+          HeadTimeout(head_timeout) -> Ok(head_timeout)
           _ -> Error(Nil)
         }
       },
     )
     |> result.unwrap(30000)
-  let complete_by = now() + completion_timeout
 
-  try raw = do_read_request_head(socket, line_timeout, complete_by)
+  let head_by = now() + head_timeout
+
+  try raw = do_read_request_head(socket, line_timeout, head_by)
 
   // parse host
   case raw {
-    tuple(method, AbsPath(raw_path), raw_headers) -> case raw_headers {
+    tuple(method, AbsPath(path), raw_headers) -> case raw_headers {
       [tuple("host", host), ..headers] -> {
-        try _ = parse_host(host)
+        try tuple(
+          host,
+          port,
+        ) = parse_host(host)
           |> result.map_error(fn(_) { InvalidHostHeader })
-        Ok(raw)
+        let tuple(path, query) = case string.split_once(path, "?") {
+          Ok(tuple(path, query)) -> tuple(path, Some(query))
+          Error(Nil) -> tuple(path, None)
+        }
+        let request_head = http.RequestHead(
+          method: method,
+          host: host,
+          port: port,
+          path: path,
+          query: query,
+        )
+        Ok(tuple(request_head, headers))
       }
       _ -> Error(MissingHostHeader)
     }
   }
 }
 
-pub external fn read_body(
+external fn erl_read_body(
   socket,
   content_length,
   timeout,
-) -> Result(String, Nil) =
+) -> Result(String, Atom) =
   "net_http_native" "read_body"
+
+pub fn read_body(socket, content_length, timeout) {
+  let timeout_atom = atom.create_from_string("timeout")
+  let closed_atom = atom.create_from_string("closed")
+  case erl_read_body(socket, content_length, timeout) {
+    Ok(value) -> Ok(value)
+    Error(reason) if reason == timeout_atom -> Error(Timeout)
+    Error(reason) if reason == closed_atom -> Error(Closed)
+    Error(reason) -> Error(InetError(reason))
+  }
+}
+
+// TODO chunked
+pub fn read_request(socket, options) {
+  try tuple(request_head, headers) = read_request_head(socket, options)
+  let content_length = result.unwrap(
+    list.key_find(headers, "content-length"),
+    or: "0",
+  )
+  let Ok(content_length) = int.parse(content_length)
+  let maximum_body_length = list.find_map(
+      options,
+      fn(option) {
+        case option {
+          MaximumBodyLength(maximum_body_length) -> Ok(maximum_body_length)
+          _ -> Error(Nil)
+        }
+      },
+    )
+    |> result.unwrap(30000)
+  try body = case content_length {
+    0 -> Ok("")
+    length if length <= maximum_body_length -> {
+        let body_timeout = list.find_map(
+            options,
+            fn(option) {
+              case option {
+                BodyTimeout(body_timeout) -> Ok(body_timeout)
+                _ -> Error(Nil)
+              }
+            },
+          )
+          |> result.unwrap(30000)
+        read_body(socket, content_length, body_timeout)}
+    _ -> Error(ContentLengthTooLarge)
+  }
+  Ok(http.Message(request_head, headers, iodata.from_strings([body])))
+}

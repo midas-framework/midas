@@ -14,16 +14,17 @@ pub fn read_request_from_single_packet_test() {
   assert Ok(port) = http.port(listen_socket)
 
   assert Ok(socket) = tcp.connect("localhost", port)
-  let message = "GET / HTTP/1.1\r\nhost: example.test\r\nx-foo: bar\r\n\r\n"
+  let message = "GET /path?query HTTP/1.1\r\nhost: example.test:8080\r\nx-foo: bar\r\n\r\n"
   assert Ok(Nil) = tcp.send(socket, message)
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  let Ok(
-    tuple(method, path, headers),
-  ) = http.read_request_head(server_socket, [])
-  should.equal(method, gleam_http.Get)
-  should.equal(path, http.AbsPath("/"))
-  should.equal(headers, [tuple("host", "example.test"), tuple("x-foo", "bar")])
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.method, gleam_http.Get)
+  should.equal(head.host, "example.test")
+  should.equal(head.port, Some(8080))
+  should.equal(head.path, "/path")
+  should.equal(head.query, Some("query"))
+  should.equal(headers, [tuple("x-foo", "bar")])
 }
 
 pub fn read_request_from_multiple_packets_test() {
@@ -35,10 +36,10 @@ pub fn read_request_from_multiple_packets_test() {
       assert Ok(socket) = tcp.connect("localhost", port)
 
       let parts = [
-          "GET / HT",
+          "GET /path?query HT",
           "TP/1.1\r",
           "\n",
-          "host: example.test",
+          "host: example.test:8080",
           "\r\nx-fo",
           "o: bar\r\n\r\n",
         ]
@@ -53,13 +54,13 @@ pub fn read_request_from_multiple_packets_test() {
   )
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  let Ok(
-    tuple(method, path, headers),
-  ) = http.read_request_head(server_socket, [])
-  // TODO make this atom
-  should.equal(method, gleam_http.Get)
-  should.equal(path, http.AbsPath("/"))
-  should.equal(headers, [tuple("host", "example.test"), tuple("x-foo", "bar")])
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.method, gleam_http.Get)
+  should.equal(head.host, "example.test")
+  should.equal(head.port, Some(8080))
+  should.equal(head.path, "/path")
+  should.equal(head.query, Some("query"))
+  should.equal(headers, [tuple("x-foo", "bar")])
 }
 
 pub fn read_request_starting_with_empty_lines_test() {
@@ -71,12 +72,10 @@ pub fn read_request_starting_with_empty_lines_test() {
   assert Ok(Nil) = tcp.send(socket, message)
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  let Ok(
-    tuple(method, path, headers),
-  ) = http.read_request_head(server_socket, [])
-  should.equal(method, gleam_http.Get)
-  should.equal(path, http.AbsPath("/"))
-  should.equal(headers, [tuple("host", "example.test"), tuple("x-foo", "bar")])
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.method, gleam_http.Get)
+  should.equal(head.host, "example.test")
+  should.equal(headers, [tuple("x-foo", "bar")])
 }
 
 // erlang decode packet doesn't handle patch
@@ -88,10 +87,8 @@ pub fn read_http_request_unknown_method_test() {
   let Ok(_) = tcp.send(socket, "PATCH / HTTP/1.1\r\nhost: example.test\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
-  let Ok(
-    tuple(method, _path, _headers),
-  ) = http.read_request_head(server_socket, [])
-  should.equal(method, gleam_http.Patch)
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.method, gleam_http.Patch)
 }
 
 pub fn invalid_start_line_test() {
@@ -208,7 +205,7 @@ pub fn timeout_from_slow_start_line_test() {
   )
 
   let Ok(server_socket) = http.accept(listen_socket)
-  http.read_request_head(server_socket, [http.CompletionTimeout(200)])
+  http.read_request_head(server_socket, [http.HeadTimeout(200)])
   |> should.equal(Error(http.Timeout))
 }
 
@@ -231,7 +228,7 @@ pub fn timeout_from_slow_request_test() {
   )
 
   let Ok(server_socket) = http.accept(listen_socket)
-  http.read_request_head(server_socket, [http.CompletionTimeout(300)])
+  http.read_request_head(server_socket, [http.HeadTimeout(300)])
   |> should.equal(Error(http.Timeout))
 }
 
@@ -245,8 +242,8 @@ pub fn downcases_host_test() {
   let Ok(_) = tcp.send(socket, message)
 
   let Ok(server_socket) = http.accept(listen_socket)
-  http.read_request_head(server_socket, [])
-  |> should.equal(Ok(todo))
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.host, "example.test")
 }
 
 pub fn missing_host_header_test() {
@@ -311,4 +308,82 @@ pub fn parse_host_test() {
   "://"
   |> http.parse_host()
   |> should.equal(Error(Nil))
+}
+
+pub fn read_request_with_no_body_test() {
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
+
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET / HTTP/1.1\r\nhost: example.test\r\n\r\n"
+  let Ok(_) = tcp.send(socket, message)
+
+  let Ok(server_socket) = http.accept(listen_socket)
+  assert Ok(request) = http.read_request(server_socket, [])
+  gleam_http.get_body(request)
+  |> should.equal("")
+}
+
+pub fn read_request_with_content_length_test() {
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
+
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, World!"
+  let Ok(_) = tcp.send(socket, message)
+
+  let Ok(server_socket) = http.accept(listen_socket)
+  assert Ok(request) = http.read_request(server_socket, [])
+  gleam_http.get_body(request)
+  |> should.equal("Hello, World!")
+}
+
+pub fn connection_closed_in_body_length_test() {
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
+
+  process.spawn_link(
+    fn(_receive) {
+      let Ok(socket) = tcp.connect("localhost", port)
+      let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, Wor"
+      let Ok(_) = tcp.send(socket, message)
+      process.sleep(100)
+      tcp.close(socket)
+    },
+  )
+  let Ok(server_socket) = http.accept(listen_socket)
+  http.read_request(server_socket, [])
+  |> should.equal(Error(http.Closed))
+}
+
+pub fn body_timeout_length_test() {
+    assert Ok(listen_socket) = http.listen(0)
+    assert Ok(port) = http.port(listen_socket)
+
+    process.spawn_link(
+        fn(_receive) {
+            let Ok(socket) = tcp.connect("localhost", port)
+            let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, Wor"
+            let Ok(_) = tcp.send(socket, message)
+            process.sleep(1000)
+            let Ok(_) = tcp.send(socket, "ld!")
+            process.sleep(1000)
+        },
+    )
+    let Ok(server_socket) = http.accept(listen_socket)
+    http.read_request(server_socket, [http.BodyTimeout(200)])
+    |> should.equal(Error(http.Timeout))
+}
+
+pub fn body_too_large_length_test() {
+    assert Ok(listen_socket) = http.listen(0)
+    assert Ok(port) = http.port(listen_socket)
+
+    let Ok(socket) = tcp.connect("localhost", port)
+    let message = "GET / HTTP/1.1\r\nhost: example.test\r\ncontent-length: 13\r\n\r\nHello, World!"
+    let Ok(_) = tcp.send(socket, message)
+
+    let Ok(server_socket) = http.accept(listen_socket)
+    http.read_request(server_socket, [http.MaximumBodyLength(12)])
+    |> should.equal(Error(http.ContentLengthTooLarge))
 }
