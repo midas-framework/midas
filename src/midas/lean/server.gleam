@@ -32,35 +32,32 @@ fn response_to_string(response) {
   response
 }
 
-pub type Accept {
-  Accept(From(Bool))
-}
 
-fn run(receive, handler, listen_socket) {
+fn run(_receive, handler, listen_socket) {
   let closed_atom = atom.create_from_string("closed")
-  assert Ok(Accept(from)) = receive(Infinity)
   case wire.accept(listen_socket) {
     Ok(socket) -> {
-      let Nil = process.reply(from, True)
+        io.debug("LEAN: accepted connection")
       case wire.read_request(socket, []) {
         Ok(request) -> {
+            io.debug("LEAN: read request")
           let response = handler(request)
           case wire.send(socket, response_to_string(response)) {
             Ok(Nil) -> Nil
             Error(reason) -> {
-              io.debug(reason)
+                io.debug(reason)
               Nil
             }
           }
         }
         Error(reason) -> {
-          io.debug(reason)
+            io.debug(reason)
           Nil
         }
       }
     }
     Error(reason) if reason == closed_atom -> {
-      let Nil = process.reply(from, False)
+        io.debug(reason)
       Nil
     }
   }
