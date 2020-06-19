@@ -40,12 +40,12 @@ fn loop(receive, start_child, children) {
       // If unknown pid assume parent, and crash.
       case pop(children, predicate, []) {
         Ok(tuple(_found, children)) -> loop(receive, start_child, children)
-        // Error(Nil) -> process.kill(process.unsafe_self())
       }
     }
   }
 }
 
+// Error(Nil) -> process.kill(process.unsafe_self())
 // Currently only supports temporary children
 // Take RestartStrategy as an argument when starting and compare reason to it.
 fn init(receive, start_child) {

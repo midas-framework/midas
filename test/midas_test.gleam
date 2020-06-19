@@ -24,7 +24,6 @@ fn handle_request(request) {
   }
 }
 
-
 pub fn echo_body_test() {
   assert Ok(listen_socket) = net_http.listen(0)
   let Ok(port) = net_http.port(listen_socket)
@@ -33,7 +32,7 @@ pub fn echo_body_test() {
   let test = process.unsafe_self()
   let runner = process.spawn_link(
     fn(receive) {
-        process.process_flag(process.TrapExit(True))
+      process.process_flag(process.TrapExit(True))
       let endpoint_pid = midas.spawn_link(handle_request, listen_socket)
       process.send(test, endpoint_pid)
       let Ok(_) = receive(process.Infinity)
