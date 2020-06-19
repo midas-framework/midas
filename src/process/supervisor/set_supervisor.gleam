@@ -13,16 +13,15 @@ pub type Messages(m, c) {
 
 fn pop(haystack, predicate, done) {
   case haystack {
-    [] -> tuple(Error(Nil), list.reverse(done))
+    [] -> Error(Nil)
     [x, ..rest] -> case predicate(x) {
-      True -> tuple(Ok(x), list.append(list.reverse(done), rest))
+      True -> Ok(tuple(x, list.append(list.reverse(done), rest)))
       False -> pop(rest, predicate, [x, ..done])
     }
   }
 }
 
 fn loop(receive, start_child, children) {
-  io.debug(start_child)
   try message = receive(Infinity)
   case message {
     // Could instead pass in a function that returns the right pid?
@@ -36,16 +35,19 @@ fn loop(receive, start_child, children) {
       process.reply(from, list.reverse(children))
       loop(receive, start_child, children)
     }
-    // TODO accept permantent temporary
-    Exit(down_pid, process.Normal) -> {
+    Exit(down_pid, _reason) -> {
       let predicate = fn(pid) { process.bare(pid) == down_pid }
-      // TODO if unknown assume parent
-      let tuple(_found, children) = pop(children, predicate, [])
-      loop(receive, start_child, children)
+      // If unknown pid assume parent, and crash.
+      case pop(children, predicate, []) {
+        Ok(tuple(_found, children)) -> loop(receive, start_child, children)
+        // Error(Nil) -> process.kill(process.unsafe_self())
+      }
     }
   }
 }
 
+// Currently only supports temporary children
+// Take RestartStrategy as an argument when starting and compare reason to it.
 fn init(receive, start_child) {
   process.process_flag(TrapExit(True))
   loop(receive, start_child, [])
