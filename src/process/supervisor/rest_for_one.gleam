@@ -1,5 +1,4 @@
 import gleam/io
-import gleam/option.{Some}
 // Names mixed/Team/Group/Individual/myriad/motly
 import process/process
 import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
@@ -100,8 +99,9 @@ pub type Messages(m) {
 }
 
 fn loop(receive, specs, children) {
-  case receive(Infinity) {
-    Some(Exit(pid, reason)) -> {
+    try message = receive(Infinity)
+  case message {
+    Exit(pid, reason) -> {
       let tuple(child1, child2, child3) = children
       let pid1 = child_pid(child1)
       let pid2 = child_pid(child2)

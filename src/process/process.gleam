@@ -36,7 +36,7 @@
 //// Example a simple process that sums all the numbers sent to it.
 ////
 ////    fn loop(receive, state) {
-////      let value = receive(Infinity)
+////      try value = receive(Infinity)
 ////      loop(receive, state + value)
 ////    }
 ////
@@ -65,7 +65,7 @@
 ////    }
 ////
 ////    fn loop(receive) {
-////      let Reverse(from, str) = receive(Infinity)
+////      try Reverse(from, str) = receive(Infinity)
 ////      process.reply(from, string.reverse(str))
 ////      loop(receive)
 ////    }
@@ -85,7 +85,6 @@
 //// Again Gleam ensures we can't send a message that isn't understood and we can't reply with a type that isn't expected.
 
 import gleam/atom.{Atom}
-import gleam/option.{Option}
 
 /// A value in milliseconds or infinity.
 pub type Wait {
@@ -112,7 +111,7 @@ pub type ExitReason {
 // Other types e.g. BadArith(Stack) can all be enumerated here.
 // receive can only fail due to timeout so option is an acceptable response type
 type Receive(m) =
-  fn(Wait) -> Option(m)
+  fn(Wait) -> Result(m, Nil)
 
 type Run(m, r) =
   fn(Receive(m)) -> r

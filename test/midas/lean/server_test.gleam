@@ -1,7 +1,6 @@
 import gleam/atom
 import gleam/dynamic
 import gleam/io
-import gleam/option.{Option, Some, None}
 import gleam/result
 import gleam/http
 import process/process
@@ -10,7 +9,7 @@ import midas/net/http as wire
 import midas/net/tcp
 import gleam/should
 
-pub external fn unsafe_receive(process.Wait) -> Option(m) =
+pub external fn unsafe_receive(process.Wait) -> Result(m, Nil) =
   "process_native" "do_receive"
 
 pub fn empty_response_test() {
@@ -83,7 +82,7 @@ pub fn client_closes_connection_test() {
   let message = "GET / HTTP/1.1\r\nhos"
   assert Ok(Nil) = tcp.send(socket, message)
   let Nil = tcp.close(socket)
-  let Some(message) = unsafe_receive(process.Infinity)
+  let Ok(message) = unsafe_receive(process.Infinity)
 
   message
   |> dynamic.element(0)
@@ -121,7 +120,7 @@ pub fn client_doesnt_wait_for_response_test() {
   let message = "GET / HTTP/1.1\r\nhost: example.test\r\n\r\n"
   assert Ok(Nil) = tcp.send(socket, message)
   let Nil = tcp.close(socket)
-  let Some(message) = unsafe_receive(process.Infinity)
+  let Ok(message) = unsafe_receive(process.Infinity)
 
   message
   |> dynamic.element(0)

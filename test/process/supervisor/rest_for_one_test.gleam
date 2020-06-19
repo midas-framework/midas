@@ -4,7 +4,7 @@ import process/process.{Ref, Flush, From, Pid, BarePid, ExitReason, Normal, Trap
 import process/supervisor/rest_for_one
 import gleam/should
 
-pub external fn unsafe_receive(Wait) -> m =
+pub external fn unsafe_receive(Wait) -> Result(m, Nil) =
   "process_native" "do_receive"
 
 pub fn start_up_order_test() {
@@ -35,25 +35,25 @@ pub fn start_up_order_test() {
     },
   )
 
-  let Some(child1_from_self) = unsafe_receive(Milliseconds(100))
-  let Some(child1_from_child2) = unsafe_receive(Milliseconds(100))
+  let Ok(child1_from_self) = unsafe_receive(Milliseconds(100))
+  let Ok(child1_from_child2) = unsafe_receive(Milliseconds(100))
   should.equal(child1_from_self, child1_from_child2)
-  let Some(child2_from_self) = unsafe_receive(Milliseconds(100))
+  let Ok(child2_from_self) = unsafe_receive(Milliseconds(100))
   should.not_equal(child1_from_self, child2_from_self)
 
   // Everything is permanent so a Process exiting normally is restarted
   process.send(child2_from_self, Nil)
-  let Some(child1_from_child2_again) = unsafe_receive(Milliseconds(100))
-  let Some(child2_from_self_again) = unsafe_receive(Milliseconds(100))
+  let Ok(child1_from_child2_again) = unsafe_receive(Milliseconds(100))
+  let Ok(child2_from_self_again) = unsafe_receive(Milliseconds(100))
   should.equal(child1_from_self, child1_from_child2_again)
   should.not_equal(child2_from_self, child2_from_self_again)
 
   // Restarts from kill as well as normal exit
   process.kill(child1_from_self)
-  let Some(child1_from_self_again) = unsafe_receive(Milliseconds(100))
-  let Some(child1_from_child2_again) = unsafe_receive(Milliseconds(100))
+  let Ok(child1_from_self_again) = unsafe_receive(Milliseconds(100))
+  let Ok(child1_from_child2_again) = unsafe_receive(Milliseconds(100))
   should.equal(child1_from_self_again, child1_from_child2_again)
-  let Some(child2_from_self_again) = unsafe_receive(Milliseconds(100))
+  let Ok(child2_from_self_again) = unsafe_receive(Milliseconds(100))
   should.not_equal(child1_from_self_again, child2_from_self_again)
 
   should.not_equal(child1_from_self, child1_from_self_again)

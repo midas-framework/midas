@@ -8,8 +8,8 @@ import gleam/should
 fn start_child(_: Nil) {
   process.spawn_link(
     fn(receive) {
-      let Some(_) = receive(Infinity)
-      Nil
+      try Nil = receive(Infinity)
+      Ok(Nil)
     },
   )
 }
@@ -38,5 +38,5 @@ pub fn will_stop_children_for_unknown_exit(){
     let Ok(c1) = set_supervisor.start_child(supervisor, Nil)
     // monitor child
     todo
-    
+
 }

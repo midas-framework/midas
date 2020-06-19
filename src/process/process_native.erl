@@ -13,13 +13,13 @@ do_receive({milliseconds, Milliseconds}) ->
 do_receive(Wait) ->
     receive
         {'DOWN', Ref, process, Pid2, Reason} ->
-            {some, {down, Ref, process, Pid2, Reason}};
+            {ok, {down, Ref, process, Pid2, Reason}};
         {'EXIT', Pid, Reason} ->
-            {some, {exit, Pid, Reason}};
+            {ok, {exit, Pid, Reason}};
         Message ->
-            {some, Message}
+            {ok, Message}
     after Wait ->
-         none
+         {error, nil}
     end.
 
 identity(X) -> X.

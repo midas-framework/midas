@@ -23,20 +23,21 @@ fn pop(haystack, predicate, done) {
 
 fn loop(receive, start_child, children) {
     io.debug(start_child)
-  case receive(Infinity) {
+    try message = receive(Infinity)
+  case message {
     // Could instead pass in a function that returns the right pid?
-    Some(StartChild(from, config)) -> {
+    StartChild(from, config) -> {
       let child = start_child(config)
       let children = [child, ..children]
       process.reply(from, child)
       loop(receive, start_child, children)
     }
-    Some(WhichChildren(from)) -> {
+    WhichChildren(from) -> {
       process.reply(from, list.reverse(children))
       loop(receive, start_child, children)
     }
     // TODO accept permantent temporary
-    Some(Exit(down_pid, process.Normal)) -> {
+    Exit(down_pid, process.Normal) -> {
       let predicate = fn(pid) { process.bare(pid) == down_pid }
       // TODO if unknown assume parent
       let tuple(_found, children) = pop(children, predicate, [])

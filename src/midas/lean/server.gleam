@@ -38,7 +38,7 @@ pub type Accept {
 
 fn run(receive, handler, listen_socket) {
   let closed_atom = atom.create_from_string("closed")
-  assert Some(Accept(from)) = receive(Infinity)
+  assert Ok(Accept(from)) = receive(Infinity)
   case wire.accept(listen_socket) {
     Ok(socket) -> {
       let Nil = process.reply(from, True)

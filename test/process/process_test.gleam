@@ -3,7 +3,7 @@ import process/process
 import process/process.{MonitorType, Process, Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
 import gleam/should
 
-pub external fn unsafe_receive(Wait) -> Option(m) =
+pub external fn unsafe_receive(Wait) -> Result(m, Nil) =
   "process_native" "do_receive"
 
 pub fn send_message_test() {
@@ -17,7 +17,7 @@ pub fn send_message_test() {
   )
 
   process.send(pid, 5)
-  should.equal(Some(Some(5)), unsafe_receive(Infinity))
+  should.equal(Ok(Ok(5)), unsafe_receive(Infinity))
 }
 
 pub fn receive_timeout_test() {
@@ -30,8 +30,8 @@ pub fn receive_timeout_test() {
     },
   )
 
-  should.equal(None, unsafe_receive(Milliseconds(0)))
-  should.equal(Some(None), unsafe_receive(Infinity))
+  should.equal(Error(Nil), unsafe_receive(Milliseconds(0)))
+  should.equal(Ok(Error(Nil)), unsafe_receive(Infinity))
 }
 
 pub fn reference_to_self_test() {
@@ -44,8 +44,8 @@ pub fn reference_to_self_test() {
     },
   )
 
-  should.equal(Some(pid), unsafe_receive(Infinity))
-  should.equal(Some(pid), unsafe_receive(Infinity))
+  should.equal(Ok(pid), unsafe_receive(Infinity))
+  should.equal(Ok(pid), unsafe_receive(Infinity))
 }
 
 pub type Exit {
@@ -71,8 +71,8 @@ pub fn kill_process_test() {
     },
   )
 
-  let Some(response) = unsafe_receive(Infinity)
-  let Some(Exit(_down_pid, reason)) = response
+  let Ok(response) = unsafe_receive(Infinity)
+  let Ok(Exit(_down_pid, reason)) = response
   // Need to sort out kill and killed.
   // All other exit reasons are the same on both sides.
   should.equal(reason, process.Killed)
@@ -86,7 +86,7 @@ pub fn monitor_test() {
   let pid = process.spawn_link(fn(_) { Nil })
 
   let monitor_reference = process.monitor(pid)
-  let Some(
+  let Ok(
     Down(down_reference, Process, down_pid, Normal),
   ) = unsafe_receive(Infinity)
   should.equal(monitor_reference, down_reference)
@@ -107,7 +107,7 @@ pub fn demonitor_flush_test() {
 
   let monitor_reference = process.monitor(pid)
   let True = process.demonitor(monitor_reference, [Flush])
-  let None = unsafe_receive(Milliseconds(100))
+  let Error(Nil) = unsafe_receive(Milliseconds(100))
   Nil
 }
 
@@ -118,7 +118,7 @@ type Ping(m) {
 pub fn call_task_test() {
   let pid = process.spawn_link(
     fn(receive) {
-      let Some(Ping(from, value)) = receive(Infinity)
+      let Ok(Ping(from, value)) = receive(Infinity)
       process.reply(from, value)
     },
   )
