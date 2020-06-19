@@ -6,6 +6,7 @@ import midas/lean/server
 pub fn spawn_link(handler, listen_socket) {
   let sup = set_supervisor.spawn_link(
     fn(_: Nil) { server.spawn_link(handler, listen_socket) },
+    set_supervisor.Temporary,
   )
   sup
 }
