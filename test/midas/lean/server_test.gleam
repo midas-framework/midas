@@ -23,9 +23,6 @@ pub fn empty_response_test() {
     },
     listen_socket,
   )
-  process.spawn_link(
-    fn(_receive) { process.call(pid, server.Accept(_), process.Infinity) },
-  )
 
   assert Ok(socket) = tcp.connect("localhost", port)
   let message = "GET / HTTP/1.1\r\nhost: example.test\r\n\r\n"
@@ -47,9 +44,6 @@ pub fn response_with_body_test() {
       |> http.set_body("Hello, You!")
     },
     listen_socket,
-  )
-  process.spawn_link(
-    fn(_receive) { process.call(pid, server.Accept(_), process.Infinity) },
   )
 
   assert Ok(socket) = tcp.connect("localhost", port)
@@ -74,9 +68,6 @@ pub fn client_closes_connection_test() {
     listen_socket,
   )
   let reference = process.monitor(pid)
-  process.spawn_link(
-    fn(_receive) { process.call(pid, server.Accept(_), process.Infinity) },
-  )
 
   assert Ok(socket) = tcp.connect("localhost", port)
   let message = "GET / HTTP/1.1\r\nhos"
@@ -112,9 +103,6 @@ pub fn client_doesnt_wait_for_response_test() {
     listen_socket,
   )
   let reference = process.monitor(pid)
-  process.spawn_link(
-    fn(_receive) { process.call(pid, server.Accept(_), process.Infinity) },
-  )
 
   assert Ok(socket) = tcp.connect("localhost", port)
   let message = "GET / HTTP/1.1\r\nhost: example.test\r\n\r\n"

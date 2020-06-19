@@ -233,7 +233,6 @@ pub fn read_request_head(socket, options) {
   let head_by = now() + head_timeout
 
   try raw = do_read_request_head(socket, line_timeout, head_by)
-
   // parse host
   case raw {
     tuple(method, AbsPath(path), raw_headers) -> case raw_headers {

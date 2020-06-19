@@ -30,21 +30,23 @@ pub fn echo_body_test() {
   let Ok(socket) = tcp.connect("localhost", port)
 
   let test = process.unsafe_self()
+  // The runner exits normally when the supervisor is killed
   let runner = process.spawn_link(
     fn(receive) {
       process.process_flag(process.TrapExit(True))
-      let endpoint_pid = midas.spawn_link(handle_request, listen_socket)
+      // For some reason the first acceptor is taken up with a slow connection
+      let endpoint_pid = midas.spawn_link(handle_request, listen_socket, 2)
       process.send(test, endpoint_pid)
       let Ok(_) = receive(process.Infinity)
       Nil
     },
   )
-  assert Ok(endpoint_pid) = unsafe_receive(process.Milliseconds(100))
+  assert Ok(endpoint_pid) = unsafe_receive(process.Milliseconds(1000))
 
   let Ok(socket) = tcp.connect("localhost", port)
   let message = "GET /echo HTTP/1.1\r\nhost: midas.test\r\ncontent-length: 14\r\ncontent-type: text/unusual\r\n\r\nHello, Server!"
   let Ok(_) = tcp.send(socket, message)
-  let Ok(response) = tcp.read_blob(socket, 0, 100)
+  let Ok(response) = tcp.read_blob(socket, 0, 1000)
   should.equal(
     response,
     "HTTP/1.1 200 \r\nconnection: close\r\ncontent-type: text/unusual\r\n\r\nHello, Server!",
