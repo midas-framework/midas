@@ -1,6 +1,6 @@
 [{<<"gleam_http">>,
   {git,"https://github.com/midas-framework/http",
-       {ref,"da1f56f37594d64ebe0c0d3825b42d8814f3d693"}},
+       {ref,"acfb3bd8f557e26c1c36eae8dae81d6a32937816"}},
   0},
  {<<"gleam_stdlib">>,
   {git,"https://github.com/gleam-lang/stdlib",

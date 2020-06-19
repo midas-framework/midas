@@ -1,5 +1,4 @@
 import gleam/io
-import gleam/option.{Some, None}
 import gleam/uri
 import midas
 import process/process
@@ -12,7 +11,7 @@ fn handle_request(request) {
   let http.Message(body: body, ..) = request
   case http.path_segments(request) {
     ["echo"] -> {
-      let Some(content_type) = http.get_header(request, "content-type")
+      let Ok(content_type) = http.get_header(request, "content-type")
       http.Message(
         http.ResponseHead(200),
         [tuple("content-type", content_type)],
