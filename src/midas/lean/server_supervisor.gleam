@@ -13,15 +13,17 @@ pub fn spawn_link(handler, listen_socket, count) {
     fn(_: Nil) { server.spawn_link(handler, listen_socket) },
     set_supervisor.Permanent,
   )
-  assert Ok(_) = list.range(0, count)
-  |> list.traverse(fn(_i) {set_supervisor.start_child(supervisor, Nil)})
+  assert Ok(
+    _,
+  ) = list.range(0, count)
+    |> list.traverse(fn(_i) { set_supervisor.start_child(supervisor, Nil) })
   supervisor
 }
 
 pub fn start_link(
   handler,
   port: Int,
-  count: Int
+  count: Int,
 ) -> Result(Pid(set_supervisor.Messages(Nil, Nil)), Nil) {
   try listen_socket = http.listen(port)
   Ok(spawn_link(handler, listen_socket, count))

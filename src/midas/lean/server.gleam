@@ -32,32 +32,31 @@ fn response_to_string(response) {
   response
 }
 
-
 fn run(_receive, handler, listen_socket) {
   let closed_atom = atom.create_from_string("closed")
   case wire.accept(listen_socket) {
     Ok(socket) -> {
-        io.debug("LEAN: accepted connection")
+      io.debug("LEAN: accepted connection")
       case wire.read_request(socket, []) {
         Ok(request) -> {
-            io.debug("LEAN: read request")
+          io.debug("LEAN: read request")
           let response = handler(request)
           case wire.send(socket, response_to_string(response)) {
             Ok(Nil) -> Nil
             Error(reason) -> {
-                io.debug(reason)
+              io.debug(reason)
               Nil
             }
           }
         }
         Error(reason) -> {
-            io.debug(reason)
+          io.debug(reason)
           Nil
         }
       }
     }
     Error(reason) if reason == closed_atom -> {
-        io.debug(reason)
+      io.debug(reason)
       Nil
     }
   }
