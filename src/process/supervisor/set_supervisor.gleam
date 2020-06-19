@@ -35,8 +35,10 @@ fn loop(receive, start_child, children) {
       process.reply(from, list.reverse(children))
       loop(receive, start_child, children)
     }
+    // TODO accept permantent temporary
     Some(Exit(down_pid, process.Normal)) -> {
       let predicate = fn(pid) { process.bare(pid) == down_pid }
+      // TODO if unknown assume parent
       let tuple(_found, children) = pop(children, predicate, [])
       loop(receive, start_child, children)
     }

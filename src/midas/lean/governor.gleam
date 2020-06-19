@@ -11,6 +11,11 @@ fn loop(receive, server_supervisor) {
       io.debug(r)
       Nil
     }
+    // Need a backoff?
+    // If server dies before accepting just die too
+    // Can only get gone if exit normal, otherwise linking will kill it.
+    // We aalways reply so gone only in non normal exit.
+    // Exit normal but have permanent as reason on set supervisor
     Error(process.Gone) -> process.sleep(100)
   }
   loop(receive, server_supervisor)
