@@ -123,7 +123,7 @@ pub type StringValidations {
   MaxLength(Int)
 }
 
-// TODO pattern or Ascii, Alphanumeric
+// Could have pattern or Ascii, Alphanumeric, exists in the server page
 fn run_string_validation(validation, raw) {
   case validation {
     Trim -> Ok(string.trim(raw))

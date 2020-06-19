@@ -145,7 +145,6 @@ pub fn call_error_for_down_process_test() {
   let pid = process.spawn_link(fn(_) { Nil })
   let reply = process.call(pid, Ping(_, 500), Infinity)
 
-  // TODO handle this there is no concept of down
   // Gone(ExitReason)/Slow
   should.equal(reply, Error(Gone))
 }

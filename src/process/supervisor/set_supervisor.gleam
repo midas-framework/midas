@@ -22,8 +22,8 @@ fn pop(haystack, predicate, done) {
 }
 
 fn loop(receive, start_child, children) {
-    io.debug(start_child)
-    try message = receive(Infinity)
+  io.debug(start_child)
+  try message = receive(Infinity)
   case message {
     // Could instead pass in a function that returns the right pid?
     StartChild(from, config) -> {

@@ -99,7 +99,7 @@ pub type Messages(m) {
 }
 
 fn loop(receive, specs, children) {
-    try message = receive(Infinity)
+  try message = receive(Infinity)
   case message {
     Exit(pid, reason) -> {
       let tuple(child1, child2, child3) = children

@@ -30,13 +30,12 @@ pub fn listing_children_test() {
   should.equal(Ok([c2]), set_supervisor.which_children(supervisor))
 }
 
-pub fn will_stop_children_for_unknown_exit(){
-    // Assumes exit to be parent or other link
-    // If parent then exit on normal everything else dont?
-    let supervisor = set_supervisor.spawn_link(start_child)
-    should.equal(Ok([]), set_supervisor.which_children(supervisor))
-    let Ok(c1) = set_supervisor.start_child(supervisor, Nil)
-    // monitor child
-    todo
-
+pub fn will_stop_children_for_unknown_exit() {
+  // Assumes exit to be parent or other link
+  // If parent then exit on normal everything else dont?
+  let supervisor = set_supervisor.spawn_link(start_child)
+  should.equal(Ok([]), set_supervisor.which_children(supervisor))
+  let Ok(c1) = set_supervisor.start_child(supervisor, Nil)
+  // monitor child
+  todo
 }
