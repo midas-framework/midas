@@ -246,6 +246,19 @@ pub fn timeout_from_slow_request_test() {
   |> should.equal(Error(http.Timeout))
 }
 
+pub fn host_not_first_header_test() {
+  assert Ok(listen_socket) = http.listen(0)
+  assert Ok(port) = http.port(listen_socket)
+
+  let Ok(socket) = tcp.connect("localhost", port)
+  let message = "GET / HTTP/1.1\r\nfoo: bar\r\nhost: example.test\r\n\r\n"
+  let Ok(_) = tcp.send(socket, message)
+
+  let Ok(server_socket) = http.accept(listen_socket)
+  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
+  should.equal(head.host, "example.test")
+}
+
 pub fn downcases_host_test() {
   assert Ok(listen_socket) = http.listen(0)
   assert Ok(port) = http.port(listen_socket)

@@ -235,8 +235,8 @@ pub fn read_request_head(socket, options) {
   try raw = do_read_request_head(socket, line_timeout, head_by)
   // parse host
   case raw {
-    tuple(method, AbsPath(path), raw_headers) -> case raw_headers {
-      [tuple("host", host), ..headers] -> {
+    tuple(method, AbsPath(path), raw_headers) -> case list.key_pop(raw_headers, "host") {
+      Ok(tuple(host, headers)) -> {
         try tuple(
           host,
           port,
