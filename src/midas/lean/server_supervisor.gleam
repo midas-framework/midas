@@ -16,7 +16,7 @@ pub fn spawn_link(handler, listen_socket, count) {
   assert Ok(
     _,
   ) = list.range(0, count)
-    |> list.traverse(fn(_i) { set_supervisor.start_child(supervisor, Nil) })
+    |> list.try_map(fn(_i) { set_supervisor.start_child(supervisor, Nil) })
   supervisor
 }
 
