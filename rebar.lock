@@ -3,6 +3,6 @@
        {ref,"acfb3bd8f557e26c1c36eae8dae81d6a32937816"}},
   0},
  {<<"gleam_stdlib">>,
-  {git,"https://github.com/midas-framework/stdlib",
-       {ref,"18002285c30207a5cc4ecb7aa055120a8d34b519"}},
+  {git,"https://github.com/gleam-lang/stdlib",
+       {ref,"5017b8bff3097206d36bc6d5f28ce082649d4dbc"}},
   0}].
