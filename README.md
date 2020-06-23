@@ -6,7 +6,7 @@
 [![Build Status](https://github.com/midas-framework/midas/workflows/test/badge.svg?branch=master)](https://github.com/midas-framework/midas/actions?query=workflow%3Atest)
 [![IRC: #gleam-lang on chat.freenode.net](https://img.shields.io/badge/freenode%20chat-%23gleam--lang-indigo)](https://webchat.freenode.net/#gleam-lang)
 
-- [Install from hex.pm](https://hex.pm/packages/midas)
+- ~~[Install from hex.pm](https://hex.pm/packages/midas)~~ install as a git dependency.
 - [Documentation available on hexdoc](https://hexdocs.pm/midas)
 - [Discuss on freenode](https://webchat.freenode.net/#gleam-lang)
 
