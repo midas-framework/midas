@@ -1,6 +1,6 @@
 import gleam/io
 import gleam/uri
-import midas
+import midas/lean
 import process/process
 import gleam/http.{Request, Response, Get}
 import midas/net/tcp
@@ -35,7 +35,11 @@ pub fn echo_body_test() {
     fn(receive) {
       process.process_flag(process.TrapExit(True))
       // For some reason the first acceptor is taken up with a slow connection
-      let endpoint_pid = midas.spawn_link(handle_request, listen_socket, 2)
+      let endpoint_pid = lean.spawn_link(
+        handle_request,
+        listen_socket,
+        [lean.MaxConcurrency(2)],
+      )
       process.send(test, endpoint_pid)
       let Ok(_) = receive(process.Infinity)
       Nil
