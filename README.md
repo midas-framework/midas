@@ -13,12 +13,13 @@
 ## Overview
 
 Midas is a framework for building web applications that focuses on simplicity in the long run.
+**Note: you must add Midas as a git dependency to your project, it relies on unreleased Gleam features.**
 
 ```rust
 // src/my_app/web.gleam
 import gleam/http
 import gleam/http.{Get}
-import midas
+import midas/lean
 
 pub fn handle_request(request) {
   case http.method(request), http.path_segments(request) {
@@ -34,11 +35,11 @@ pub fn handle_request(request) {
 }
 
 pub fn start_link() {
-  midas.start_link(handle_request, 8080)
+  lean.start_link(handle_request, 8080, [])
 }
 ```
 
-### Start Midas in an erlang application
+### Start in an erlang application
 
 Normally you would want to start midas under your applications supervision tree.
 Inside you application file `src/my_app_app.erl` add midas to your supervision tree.
@@ -52,9 +53,24 @@ ChildSpecs = [
 ]
 ```
 
-Features included in this library.
+### Start in an Elixir application.
 
-- Helpers for HTTP Requests and Responses, see `gleam/http`.
-- HTTP/1 server, *adapter to HTTP/2 server welcome*.
-- Helpers for runtime configuration
-- Postgresql client based on [pgo](https://github.com/erleans/pgo)
+Add you web process to the supervision tree.
+
+```elixir
+defmodule Foo.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = [
+      %{
+        id: :web,
+        start: {:my_app@web, :start_link, []}
+      }
+    ]
+
+    opts = [strategy: :one_for_one, name: Foo.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end
+```
