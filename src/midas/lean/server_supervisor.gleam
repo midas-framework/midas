@@ -5,9 +5,6 @@ import process/supervisor/set_supervisor
 import midas/lean/server
 import midas/net/http
 
-// connection limit
-// connections/concurrency
-// server count
 pub fn spawn_link(handler, listen_socket, count) {
   let supervisor = set_supervisor.spawn_link(
     fn(_: Nil) { server.spawn_link(handler, listen_socket) },
