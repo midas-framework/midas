@@ -1,8 +1,10 @@
+{"1.1.0",
 [{<<"gleam_http">>,
   {git,"https://github.com/midas-framework/http",
-       {ref,"acfb3bd8f557e26c1c36eae8dae81d6a32937816"}},
+       {ref,"25b2a8256122a6361aa602fcc1a73fdf5c3d5a53"}},
   0},
- {<<"gleam_stdlib">>,
-  {git,"https://github.com/gleam-lang/stdlib",
-       {ref,"5017b8bff3097206d36bc6d5f28ce082649d4dbc"}},
-  0}].
+ {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.10.0">>},0}]}.
+[
+{pkg_hash,[
+ {<<"gleam_stdlib">>, <<"99DDF11B1458F7CA0D58A806B643CB1890C0B42CD283E51FAA6CF168C2496C9E">>}]}
+].

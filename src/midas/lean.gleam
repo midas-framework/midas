@@ -1,4 +1,4 @@
-import gleam/iodata.{Iodata}
+import gleam/string_builder.{StringBuilder}
 import gleam/list
 import gleam/result
 import gleam/http.{Request, Response}
@@ -9,7 +9,7 @@ pub type Option {
 }
 
 pub fn spawn_link(
-  handler: fn(Request(Iodata)) -> Response(Iodata),
+  handler: fn(Request(StringBuilder)) -> Response(StringBuilder),
   listen_socket,
   options: List(Option),
 ) {
@@ -21,7 +21,7 @@ pub fn spawn_link(
 }
 
 pub fn start_link(
-  handler: fn(Request(Iodata)) -> Response(Iodata),
+  handler: fn(Request(StringBuilder)) -> Response(StringBuilder),
   port: Int,
   options: List(Option),
 ) {

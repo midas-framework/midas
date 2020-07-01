@@ -2,7 +2,7 @@ import gleam/atom
 import gleam/list
 import gleam/int
 import gleam/io
-import gleam/iodata
+import gleam/string_builder
 import gleam/option.{Some, None}
 import gleam/result
 import gleam/string
@@ -28,7 +28,7 @@ fn response_to_string(response) {
       string.concat([buffer, name, ": ", value, "\r\n"])
     },
   )
-  let response = string.concat([response_head, "\r\n", iodata.to_string(body)])
+  let response = string.concat([response_head, "\r\n", string_builder.to_string(body)])
   response
 }
 

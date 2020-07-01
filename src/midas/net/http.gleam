@@ -2,7 +2,7 @@ import gleam/atom.{Atom}
 import gleam/dynamic.{Dynamic}
 import gleam/int
 import gleam/io
-import gleam/iodata
+import gleam/string_builder
 import gleam/list
 import gleam/option.{Option, Some, None}
 import gleam/result
@@ -317,5 +317,5 @@ pub fn read_request(socket, options) {
     }
     _ -> Error(ContentLengthTooLarge)
   }
-  Ok(http.Message(request_head, headers, iodata.from_strings([body])))
+  Ok(http.Message(request_head, headers, string_builder.from_strings([body])))
 }
