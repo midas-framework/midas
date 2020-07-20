@@ -1,6 +1,9 @@
-import gleam/option.{Some, None}
+import gleam/option.{None, Some}
 import process/process
-import process/process.{Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout}
+import process/process.{
+  BarePid, ExitReason, Flush, From, Infinity, Milliseconds, Normal, Pid, Ref,
+  Timeout, TrapExit, Wait
+}
 import process/supervisor/rest_for_one
 import gleam/should
 

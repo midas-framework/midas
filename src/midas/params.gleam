@@ -32,7 +32,7 @@
 
 import gleam/int
 import gleam/list
-import gleam/option.{Some, None}
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 

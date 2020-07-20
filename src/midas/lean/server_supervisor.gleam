@@ -1,6 +1,8 @@
 import gleam/list
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
+import process/process.{
+  BarePid, ExitReason, From, Infinity, Milliseconds, Pid, TrapExit
+}
 import process/supervisor/set_supervisor
 import midas/lean/server
 import midas/net/http

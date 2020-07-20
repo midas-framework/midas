@@ -1,6 +1,9 @@
-import gleam/option.{Option, Some, None}
+import gleam/option.{None, Option, Some}
 import process/process
-import process/process.{MonitorType, Process, Ref, Flush, From, Pid, BarePid, ExitReason, Normal, TrapExit, Wait, Infinity, Milliseconds, Timeout, Gone}
+import process/process.{
+  BarePid, ExitReason, Flush, From, Gone, Infinity, Milliseconds, MonitorType,
+  Normal, Pid, Process, Ref, Timeout, TrapExit, Wait
+}
 import gleam/should
 
 pub external fn unsafe_receive(Wait) -> Result(m, Nil) =

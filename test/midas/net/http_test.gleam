@@ -3,6 +3,7 @@ import gleam/io
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/string
+import gleam/uri
 import process/process
 import gleam/http as gleam_http
 import midas/net/tcp
@@ -14,17 +15,17 @@ pub fn read_request_from_single_packet_test() {
   assert Ok(port) = http.port(listen_socket)
 
   assert Ok(socket) = tcp.connect("localhost", port)
-  let message = "GET /path?query HTTP/1.1\r\nhost: example.test:8080\r\nx-foo: bar\r\n\r\n"
+  let message = "GET /path?q=foo HTTP/1.1\r\nhost: example.test:8080\r\nx-foo: bar\r\n\r\n"
   assert Ok(Nil) = tcp.send(socket, message)
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.method, gleam_http.Get)
-  should.equal(head.host, "example.test")
-  should.equal(head.port, Some(8080))
-  should.equal(head.path, "/path")
-  should.equal(head.query, Some("query"))
-  should.equal(headers, [tuple("x-foo", "bar")])
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.method(request), gleam_http.Get)
+  should.equal(gleam_http.host(request), "example.test")
+  should.equal(gleam_http.port(request), Some(8080))
+  should.equal(gleam_http.path(request), "/path")
+  should.equal(gleam_http.get_query(request), Ok([tuple("q", "foo")]))
+  should.equal(gleam_http.get_headers(request), [tuple("x-foo", "bar")])
 }
 
 pub fn read_request_from_multiple_packets_test() {
@@ -36,7 +37,7 @@ pub fn read_request_from_multiple_packets_test() {
       assert Ok(socket) = tcp.connect("localhost", port)
 
       let parts = [
-          "GET /path?query HT",
+          "GET /path?q=foo HT",
           "TP/1.1\r",
           "\n",
           "host: example.test:8080",
@@ -54,13 +55,13 @@ pub fn read_request_from_multiple_packets_test() {
   )
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.method, gleam_http.Get)
-  should.equal(head.host, "example.test")
-  should.equal(head.port, Some(8080))
-  should.equal(head.path, "/path")
-  should.equal(head.query, Some("query"))
-  should.equal(headers, [tuple("x-foo", "bar")])
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.method(request), gleam_http.Get)
+  should.equal(gleam_http.host(request), "example.test")
+  should.equal(gleam_http.port(request), Some(8080))
+  should.equal(gleam_http.path(request), "/path")
+  should.equal(gleam_http.get_query(request), Ok([tuple("q", "foo")]))
+  should.equal(gleam_http.get_headers(request), [tuple("x-foo", "bar")])
 }
 
 pub fn read_request_starting_with_empty_lines_test() {
@@ -72,10 +73,10 @@ pub fn read_request_starting_with_empty_lines_test() {
   assert Ok(Nil) = tcp.send(socket, message)
 
   assert Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.method, gleam_http.Get)
-  should.equal(head.host, "example.test")
-  should.equal(headers, [tuple("x-foo", "bar")])
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.method(request), gleam_http.Get)
+  should.equal(gleam_http.host(request), "example.test")
+  should.equal(gleam_http.get_headers(request), [tuple("x-foo", "bar")])
 }
 
 // erlang decode packet doesn't handle patch
@@ -87,8 +88,8 @@ pub fn read_http_request_patch_test() {
   let Ok(_) = tcp.send(socket, "PATCH / HTTP/1.1\r\nhost: example.test\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.method, gleam_http.Patch)
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.method(request), gleam_http.Patch)
 }
 
 pub fn read_http_request_unknown_method_test() {
@@ -101,8 +102,8 @@ pub fn read_http_request_unknown_method_test() {
   ) = tcp.send(socket, "RANDOM / HTTP/1.1\r\nhost: example.test\r\n\r\n")
 
   let Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.method, gleam_http.Other("RANDOM"))
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.method(request), gleam_http.Other("RANDOM"))
 }
 
 pub fn invalid_start_line_test() {
@@ -255,8 +256,8 @@ pub fn host_not_first_header_test() {
   let Ok(_) = tcp.send(socket, message)
 
   let Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.host, "example.test")
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.host(request), "example.test")
 }
 
 pub fn downcases_host_test() {
@@ -268,8 +269,8 @@ pub fn downcases_host_test() {
   let Ok(_) = tcp.send(socket, message)
 
   let Ok(server_socket) = http.accept(listen_socket)
-  assert Ok(tuple(head, headers)) = http.read_request_head(server_socket, [])
-  should.equal(head.host, "example.test")
+  assert Ok(request) = http.read_request_head(server_socket, [])
+  should.equal(gleam_http.host(request), "example.test")
 }
 
 pub fn missing_host_header_test() {

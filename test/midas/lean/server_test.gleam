@@ -1,5 +1,7 @@
 import gleam/atom
+import gleam/bit_string
 import gleam/dynamic
+import gleam/int
 import gleam/io
 import gleam/result
 import gleam/http
@@ -30,7 +32,7 @@ pub fn empty_response_test() {
   assert Ok(body) = tcp.read_blob(socket, 0, 5000)
   should.equal(
     body,
-    "HTTP/1.1 200 \r\nconnection: close\r\ncontent-length: 0\r\n\r\n",
+    "HTTP/1.1 200 \r\nconnection: close\r\n\r\n",
   )
 }
 
@@ -38,10 +40,12 @@ pub fn response_with_body_test() {
   assert Ok(listen_socket) = wire.listen(0)
   assert Ok(port) = wire.port(listen_socket)
 
+  let text = "Hello, You!"
   let pid = server.spawn_link(
     fn(_) {
       http.response(200)
-      |> http.set_body("Hello, You!")
+      |> http.set_header("content-length", int.to_string(bit_string.byte_size(bit_string.from_string(text))))
+      |> http.set_body(text)
     },
     listen_socket,
   )

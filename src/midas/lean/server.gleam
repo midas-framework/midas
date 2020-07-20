@@ -3,21 +3,26 @@ import gleam/list
 import gleam/int
 import gleam/io
 import gleam/string_builder
-import gleam/option.{Some, None}
+import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri.{Uri}
 import gleam/http
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
+import process/process.{
+  BarePid, ExitReason, From, Infinity, Milliseconds, Pid, TrapExit
+}
 import midas/net/http as wire
 
 fn response_to_string(response) {
-  let http.Message(
-    head: http.ResponseHead(status),
-    headers: headers,
-    body: body,
-  ) = response
+  // let http.Message(
+  //   head: http.ResponseHead(status),
+  //   headers: headers,
+  //   body: body,
+  // ) = response
+  let status = http.status(response)
+  let headers = http.get_headers(response)
+  let body = http.get_body(response)
   let headers = [tuple("connection", "close"), ..headers]
   let status_line = string.concat(["HTTP/1.1 ", int.to_string(status), " \r\n"])
   let response_head = list.fold(
@@ -28,7 +33,9 @@ fn response_to_string(response) {
       string.concat([buffer, name, ": ", value, "\r\n"])
     },
   )
-  let response = string.concat([response_head, "\r\n", string_builder.to_string(body)])
+  let response = string.concat(
+    [response_head, "\r\n", body],
+  )
   response
 }
 

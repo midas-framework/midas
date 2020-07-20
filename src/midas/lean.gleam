@@ -1,4 +1,3 @@
-import gleam/string_builder.{StringBuilder}
 import gleam/list
 import gleam/result
 import gleam/http.{Request, Response}
@@ -9,7 +8,7 @@ pub type Option {
 }
 
 pub fn spawn_link(
-  handler: fn(Request(StringBuilder)) -> Response(StringBuilder),
+  handler: fn(Request(String)) -> Response(String),
   listen_socket,
   options: List(Option),
 ) {
@@ -21,7 +20,7 @@ pub fn spawn_link(
 }
 
 pub fn start_link(
-  handler: fn(Request(StringBuilder)) -> Response(StringBuilder),
+  handler: fn(Request(String)) -> Response(String),
   port: Int,
   options: List(Option),
 ) {
