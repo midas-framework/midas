@@ -14,6 +14,14 @@ import process/process.{
 }
 import midas/net/http as wire
 
+// TODO remove
+// message body = the encoded gzip etc version of the payload body
+pub type Body {
+    Empty
+    Prepared(content_type: String, payload: BitBuilder)
+    Streams
+}
+
 fn response_to_string(response) {
   // let http.Message(
   //   head: http.ResponseHead(status),
