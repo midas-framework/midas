@@ -18,9 +18,9 @@ We use Mix because Elixir has some great libraries that are easy to call from Gl
 
 ### A Server
 
-Battle tested web servers are an erlang speciality, the are Gleam wrappers for [cowboy](https://hex.pm/packages/gleam_cowboy), [elli](https://hex.pm/packages/gleam_elli) and [plug](https://hex.pm/packages/gleam_plug).
+Battle tested web servers are an Erlang speciality, there are Gleam wrappers for [Cowboy](https://hex.pm/packages/gleam_cowboy), [Elli](https://hex.pm/packages/gleam_elli) and [Plug](https://hex.pm/packages/gleam_plug).
 
-Adding cowboy to your supervision tree so that mix will start it.
+Adding Cowboy to your supervision tree so that Mix will start it.
 
 ```elixir
   children = [
@@ -39,7 +39,7 @@ Adding cowboy to your supervision tree so that mix will start it.
 
 ### Routing, Action, Controllers
 
-The [gleam_http]() library defines Request and Response types for HTTP.
+The [gleam_http]() library defines request and response types for HTTP.
 The utilities in this library and the power of pattern matching is everything we use.
 
 ```rust
@@ -100,7 +100,7 @@ Gleam does not [(yet)](https://github.com/gleam-lang/gleam/issues/565) have any 
 
 ### Database Access
 
-We use postgresql and the [pgo library](https://github.com/erleans/pgo), there is a [gleam wrapper](https://github.com/gleam-experiments/pgo)
+We use Postgresql and the [pgo library](https://github.com/erleans/pgo), there is a [gleam wrapper](https://github.com/gleam-experiments/pgo)
 
 This does not give us models, we haven't missed them. (I would argue models have less value in a functional world, but different projects might miss them).
 
