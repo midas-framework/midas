@@ -1,5 +1,8 @@
-import gleam/option.{Some, None}
-import midas/params.{Missing, CastFailure, as_string, as_integer, Trim, MinLength, MaxLength, Allow, Disallow, Min, Max}
+import gleam/option.{None, Some}
+import midas/params.{
+  Allow, CastFailure, Disallow, Max, MaxLength, Min, MinLength, Missing, Trim,
+  as_integer, as_string
+}
 import gleam/should
 
 pub fn required_param_test() {

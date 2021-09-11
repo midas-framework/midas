@@ -2,9 +2,8 @@ import gleam/atom.{Atom}
 import gleam/dynamic.{Dynamic}
 import gleam/int
 import gleam/io
-import gleam/string_builder
 import gleam/list
-import gleam/option.{Option, Some, None}
+import gleam/option.{None, Option, Some}
 import gleam/result
 import gleam/string
 import gleam/http
@@ -250,14 +249,12 @@ pub fn read_request_head(socket, options) {
           Ok(tuple(path, query)) -> tuple(path, Some(query))
           Error(Nil) -> tuple(path, None)
         }
-        let request_head = http.RequestHead(
-          method: method,
-          host: host,
-          port: port,
-          path: path,
-          query: query,
-        )
-        Ok(tuple(request_head, headers))
+        let request = http.request(method, host, port, path, query)
+        let request = list.fold(headers, request, fn(header, request) {
+            let tuple(name, value) = header
+            http.set_header(request, name, value)
+        })
+        Ok(request)
       }
       _ -> Error(MissingHostHeader)
     }
@@ -284,11 +281,10 @@ pub fn read_body(socket, content_length, timeout) {
 
 // Note this does not handle transfer encoding chunked.
 pub fn read_request(socket, options) {
-  try tuple(request_head, headers) = read_request_head(socket, options)
-  let content_length = result.unwrap(
-    list.key_find(headers, "content-length"),
-    or: "0",
-  )
+  try request = read_request_head(socket, options)
+  let content_length = http.get_header(request, "content-length")
+  |> result.unwrap("0")
+
   let Ok(content_length) = int.parse(content_length)
   let maximum_body_length = list.find_map(
       options,
@@ -317,5 +313,5 @@ pub fn read_request(socket, options) {
     }
     _ -> Error(ContentLengthTooLarge)
   }
-  Ok(http.Message(request_head, headers, string_builder.from_strings([body])))
+  Ok(http.set_body(request, body))
 }

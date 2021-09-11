@@ -3,7 +3,9 @@ import gleam/dynamic.{Dynamic}
 import gleam/io
 import gleam/list
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Wait, Infinity, Milliseconds}
+import process/process.{
+  BarePid, ExitReason, From, Infinity, Milliseconds, Pid, Wait
+}
 import process/supervisor/set_supervisor
 import gleam/should
 

@@ -2,7 +2,7 @@ import gleam/io
 import gleam/uri
 import midas/lean
 import process/process
-import gleam/http.{Request, Response, Get}
+import gleam/http.{Get, Request, Response}
 import midas/net/tcp
 import midas/net/http as net_http
 import gleam/should
@@ -11,15 +11,14 @@ pub external fn unsafe_receive(process.Wait) -> Result(m, Nil) =
   "process_native" "do_receive"
 
 fn handle_request(request) {
-  let http.Message(body: body, ..) = request
+  let body = http.get_body(request)
   case http.path_segments(request) {
     ["echo"] -> {
       let Ok(content_type) = http.get_header(request, "content-type")
-      http.Message(
-        http.ResponseHead(200),
-        [tuple("content-type", content_type)],
-        body,
-      )
+
+      http.response(200)
+      |> http.set_header("content-type", content_type)
+      |> http.set_body(body)
     }
   }
 }

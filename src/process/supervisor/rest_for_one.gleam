@@ -1,7 +1,9 @@
 import gleam/io
 // Names mixed/Team/Group/Individual/myriad/motly
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
+import process/process.{
+  BarePid, ExitReason, From, Infinity, Milliseconds, Pid, TrapExit
+}
 
 pub type ChildSpecs(a, b, c) {
   One(fn() -> Pid(a))

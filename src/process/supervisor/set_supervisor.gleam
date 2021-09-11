@@ -3,7 +3,9 @@ import gleam/io
 import gleam/list
 import gleam/option.{Some}
 import process/process
-import process/process.{From, Pid, BarePid, ExitReason, Infinity, Milliseconds, TrapExit}
+import process/process.{
+  BarePid, ExitReason, From, Infinity, Milliseconds, Pid, TrapExit
+}
 
 pub type Restart {
   Permanent
