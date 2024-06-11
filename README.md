@@ -1,7 +1,7 @@
 # Midas
 
-**Why**: Midas exists to speed up developers by eliminating complexity,
-**How**: ...by extending type guarantees to all stages of development,
+**Why**: Midas exists to speed up developers by eliminating complexity,<br/>
+**How**: ...by extending type guarantees to all stages of development,<br/>
 **What**: ...with a Gleam library to replace use of build and deploy tools like Bash/Make.
 
 [![Package Version](https://img.shields.io/hexpm/v/midas)](https://hex.pm/packages/midas)
