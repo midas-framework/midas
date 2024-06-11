@@ -20,7 +20,8 @@ const auth_host = "app.netlify.com"
 
 const auth_path = "/authorize"
 
-pub fn authenticate(client_id, redirect_uri) {
+pub fn authenticate(app) {
+  let App(client_id, redirect_uri) = app
   let state = int.to_string(int.random(1_000_000_000))
   let url = auth_url(client_id, redirect_uri, state)
 
