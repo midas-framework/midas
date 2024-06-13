@@ -6,6 +6,11 @@ import snag.{type Snag}
 pub type Effect(a) {
   Done(a)
   Abort(Snag)
+  Bundle(
+    module: String,
+    function: String,
+    resume: fn(Result(String, String)) -> Effect(a),
+  )
   Follow(uri: String, resume: fn(Result(Uri, Nil)) -> Effect(a))
   Fetch(
     request: Request(BitArray),
@@ -28,6 +33,7 @@ pub fn do(eff, then) {
   case eff {
     Done(value) -> then(value)
     Abort(reason) -> Abort(reason)
+    Bundle(m, f, resume) -> Bundle(m, f, fn(reply) { do(resume(reply), then) })
     Follow(lift, resume) -> Follow(lift, fn(reply) { do(resume(reply), then) })
     Fetch(lift, resume) -> Fetch(lift, fn(reply) { do(resume(reply), then) })
     Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
@@ -47,6 +53,18 @@ fn result_to_effect(result, error_handler) {
     Ok(value) -> Done(value)
     Error(reason) -> Abort(error_handler(reason))
   }
+}
+
+pub fn done(value) {
+  Done(value)
+}
+
+pub fn abort(value) {
+  Abort(value)
+}
+
+pub fn bundle(m, f) {
+  Bundle(m, f, result_to_effect(_, snag.new))
 }
 
 pub fn fetch(request) {
