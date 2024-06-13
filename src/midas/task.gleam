@@ -16,7 +16,13 @@ pub type Effect(a) {
     request: Request(BitArray),
     resume: fn(Result(Response(BitArray), FetchError)) -> Effect(a),
   )
-  Log(message: String, fn(Result(Nil, Nil)) -> Effect(a))
+  Log(message: String, resume: fn(Result(Nil, Nil)) -> Effect(a))
+  Read(file: String, resume: fn(Result(BitArray, String)) -> Effect(a))
+  Write(
+    file: String,
+    bytes: BitArray,
+    resume: fn(Result(Nil, String)) -> Effect(a),
+  )
   Zip(
     files: List(#(String, BitArray)),
     resume: fn(Result(BitArray, Nil)) -> Effect(a),
@@ -37,6 +43,9 @@ pub fn do(eff, then) {
     Follow(lift, resume) -> Follow(lift, fn(reply) { do(resume(reply), then) })
     Fetch(lift, resume) -> Fetch(lift, fn(reply) { do(resume(reply), then) })
     Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
+    Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
+    Write(file, bytes, resume) ->
+      Write(file, bytes, fn(reply) { do(resume(reply), then) })
     Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
   }
 }
@@ -94,6 +103,22 @@ pub fn log(message) {
 
 fn log_error_reason(_: Nil) {
   snag.new("Failed to log.")
+}
+
+pub fn read(file) {
+  Read(file, result_to_effect(_, read_error_reason))
+}
+
+fn read_error_reason(message) {
+  snag.new("Failed to read: " <> message)
+}
+
+pub fn write(file, bytes) {
+  Write(file, bytes, result_to_effect(_, write_error_reason))
+}
+
+fn write_error_reason(message) {
+  snag.new("Failed to write: " <> message)
 }
 
 pub fn zip(message) {
