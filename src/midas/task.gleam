@@ -16,6 +16,7 @@ pub type Effect(a) {
     request: Request(BitArray),
     resume: fn(Result(Response(BitArray), FetchError)) -> Effect(a),
   )
+  List(directory: String, resume: fn(Result(List(String), String)) -> Effect(a))
   Log(message: String, resume: fn(Result(Nil, Nil)) -> Effect(a))
   Read(file: String, resume: fn(Result(BitArray, String)) -> Effect(a))
   Write(
@@ -42,6 +43,7 @@ pub fn do(eff, then) {
     Bundle(m, f, resume) -> Bundle(m, f, fn(reply) { do(resume(reply), then) })
     Follow(lift, resume) -> Follow(lift, fn(reply) { do(resume(reply), then) })
     Fetch(lift, resume) -> Fetch(lift, fn(reply) { do(resume(reply), then) })
+    List(lift, resume) -> List(lift, fn(reply) { do(resume(reply), then) })
     Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
     Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
     Write(file, bytes, resume) ->
@@ -103,6 +105,14 @@ pub fn log(message) {
 
 fn log_error_reason(_: Nil) {
   snag.new("Failed to log.")
+}
+
+pub fn list(file) {
+  List(file, result_to_effect(_, list_error_reason))
+}
+
+fn list_error_reason(message) {
+  snag.new("Failed to list: " <> message)
 }
 
 pub fn read(file) {
