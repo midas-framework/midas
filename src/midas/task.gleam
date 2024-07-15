@@ -1,5 +1,6 @@
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
+import gleam/list
 import gleam/uri.{type Uri}
 import snag.{type Snag}
 
@@ -49,6 +50,42 @@ pub fn do(eff, then) {
     Write(file, bytes, resume) ->
       Write(file, bytes, fn(reply) { do(resume(reply), then) })
     Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
+  }
+}
+
+pub fn each(items, run) {
+  sequential(list.map(items, run))
+}
+
+pub fn sequential(tasks) {
+  do_sequential(tasks, [])
+}
+
+fn do_sequential(tasks, acc) {
+  case tasks {
+    [] -> Done(list.reverse(acc))
+    [next, ..rest] -> {
+      case next {
+        Done(x) -> do_sequential(rest, [x, ..acc])
+        Abort(reason) -> Abort(reason)
+        Bundle(m, f, then) ->
+          Bundle(m, f, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Fetch(value, then) ->
+          Fetch(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Follow(value, then) ->
+          Follow(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        List(value, then) ->
+          List(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Log(value, then) ->
+          Log(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Read(value, then) ->
+          Read(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Write(f, b, then) ->
+          Write(f, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Zip(value, then) ->
+          Zip(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+      }
+    }
   }
 }
 
