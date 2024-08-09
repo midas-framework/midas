@@ -2,6 +2,7 @@ import gleam/bit_array
 import gleam/dynamic
 import gleam/http
 import gleam/http/request
+import gleam/http/response
 import gleam/int
 import gleam/json
 import gleam/list
@@ -82,12 +83,60 @@ fn base_request(token) {
   |> request.prepend_header("Authorization", string.append("Bearer ", token))
 }
 
+fn get(token, path) {
+  base_request(token)
+  |> request.set_path(path)
+  |> request.set_body(<<>>)
+}
+
 fn post(token, path, mime, content) {
   base_request(token)
   |> request.set_method(http.Post)
   |> request.set_path(path)
   |> request.prepend_header("content-type", mime)
   |> request.set_body(content)
+}
+
+pub fn list_sites(token) {
+  let request = list_sites_request(token)
+  use response <- t.do(t.fetch(request))
+  use response <- t.try(list_sites_response(response))
+  t.Done(response)
+}
+
+pub fn list_sites_request(token) {
+  let path = "/api/v1/sites"
+  get(token, path)
+}
+
+pub fn list_sites_response(response: response.Response(BitArray)) {
+  use json <- try(
+    bit_array.to_string(response.body)
+    |> result.replace_error(snag.new("not utf8 encoded")),
+  )
+  let decoder = dynamic.list(site_decoder)
+  use videos <- try(
+    json.decode_bits(response.body, decoder)
+    |> result.map_error(fn(reason) {
+      snag.new(string.inspect(reason))
+      |> snag.layer("failed to decode sites")
+    }),
+  )
+  Ok(videos)
+}
+
+fn site_decoder(raw) {
+  dynamic.decode4(
+    Site,
+    dynamic.field("id", dynamic.string),
+    dynamic.field("state", dynamic.string),
+    dynamic.field("name", dynamic.string),
+    dynamic.field("url", dynamic.string),
+  )(raw)
+}
+
+pub type Site {
+  Site(id: String, state: String, name: String, url: String)
 }
 
 pub fn deploy_site(token, site_id, files) {
