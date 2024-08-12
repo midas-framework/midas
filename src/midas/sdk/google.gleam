@@ -1,6 +1,5 @@
 import gleam/bit_array
 import gleam/dynamic
-import gleam/http
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -67,10 +66,45 @@ pub fn auth_redirect(redirect) {
   use access_token <- try(key_find(parts, "access_token"))
   use token_type <- try(key_find(parts, "token_type"))
   use returned_state <- try(key_find(parts, "state"))
+  // other parts expires_in and scope
   Ok(#(access_token, token_type, returned_state))
 }
 
 fn key_find(items, key) {
   list.key_find(items, key)
   |> result.replace_error("Did not find key: " <> key)
+}
+
+const openid_host = "openidconnect.googleapis.com"
+
+const userinfo_path = "/v1/userinfo"
+
+pub fn userinfo(token) {
+  let request = userinfo_request(token)
+  use response <- t.do(t.fetch(request))
+  use response <- t.try(userinfo_response(response))
+  t.Done(response)
+}
+
+pub fn userinfo_request(token) {
+  request.new()
+  |> request.set_host(openid_host)
+  |> request.prepend_header("Authorization", string.append("Bearer ", token))
+  |> request.set_path(userinfo_path)
+  |> request.set_body(<<>>)
+}
+
+pub fn userinfo_response(response: response.Response(BitArray)) {
+  use json <- try(
+    bit_array.to_string(response.body)
+    |> result.replace_error(snag.new("not utf8 encoded")),
+  )
+  use message <- try(
+    json.decode_bits(response.body, dynamic.field("email", dynamic.string))
+    |> result.map_error(fn(reason) {
+      snag.new(string.inspect(reason))
+      |> snag.layer("failed to decode message")
+    }),
+  )
+  Ok(message)
 }
