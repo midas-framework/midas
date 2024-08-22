@@ -110,10 +110,6 @@ pub fn list_sites_request(token) {
 }
 
 pub fn list_sites_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
   let decoder = dynamic.list(site_decoder)
   use videos <- try(
     json.decode_bits(response.body, decoder)
