@@ -17,7 +17,7 @@ Midas separates defining tasks from running tasks.
 The `midas/task` module is for defining tasks, this is normally the module you want to start with.
 
 ```gleam
-import gleam/task as t
+import midas/task as t
 
 pub fn task() {
   let request = // ...
