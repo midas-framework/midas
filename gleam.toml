@@ -12,6 +12,7 @@ gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 snag = ">= 0.3.0 and < 1.0.0"
 gleam_http = ">= 3.6.0 and < 4.0.0"
 gleam_json = ">= 1.0.0 and < 3.0.0"
+filepath = ">= 1.0.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

@@ -1,3 +1,4 @@
+import filepath
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/list
@@ -173,6 +174,28 @@ fn read_error_reason(message) {
 
 pub fn serve(port, handle) {
   Serve(port, handle, result_to_effect(_, serve_error_reason))
+}
+
+pub fn serve_static(port, files) {
+  let handle = fn(request) {
+    let request.Request(path: path, ..) = request
+    let mime = case filepath.extension(path) {
+      Ok(".js") -> "application/javascript"
+      Ok(_) -> "application/octet-stream"
+      // index pages are assumed to be html
+      Error(Nil) -> "text/html"
+    }
+    case list.key_find(files, path) {
+      Ok(content) ->
+        response.new(200)
+        |> response.set_header("content-type", mime)
+        |> response.set_body(content)
+      Error(Nil) ->
+        response.new(404)
+        |> response.set_body(<<>>)
+    }
+  }
+  serve(port, handle)
 }
 
 fn serve_error_reason(message) {
