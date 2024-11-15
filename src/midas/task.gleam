@@ -6,6 +6,13 @@ import gleam/option.{type Option}
 import gleam/uri.{type Uri}
 import snag.{type Snag}
 
+pub type HashAlgorithm {
+  SHA1
+  SHA256
+  SHA384
+  SHA512
+}
+
 pub type Effect(a) {
   Done(a)
   Abort(Snag)
@@ -18,6 +25,11 @@ pub type Effect(a) {
   Fetch(
     request: Request(BitArray),
     resume: fn(Result(Response(BitArray), FetchError)) -> Effect(a),
+  )
+  Hash(
+    algorithm: HashAlgorithm,
+    bytes: BitArray,
+    resume: fn(Result(BitArray, String)) -> Effect(a),
   )
   List(directory: String, resume: fn(Result(List(String), String)) -> Effect(a))
   Log(message: String, resume: fn(Result(Nil, Nil)) -> Effect(a))
@@ -51,12 +63,13 @@ pub fn do(eff, then) {
     Bundle(m, f, resume) -> Bundle(m, f, fn(reply) { do(resume(reply), then) })
     Follow(lift, resume) -> Follow(lift, fn(reply) { do(resume(reply), then) })
     Fetch(lift, resume) -> Fetch(lift, fn(reply) { do(resume(reply), then) })
+    Hash(algorithm, bytes, resume) ->
+      Hash(algorithm, bytes, fn(reply) { do(resume(reply), then) })
     List(lift, resume) -> List(lift, fn(reply) { do(resume(reply), then) })
     Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
     Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
     Serve(port, handle, resume) ->
       Serve(port, handle, fn(reply) { do(resume(reply), then) })
-
     Write(file, bytes, resume) ->
       Write(file, bytes, fn(reply) { do(resume(reply), then) })
     Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
@@ -84,6 +97,8 @@ fn do_sequential(tasks, acc) {
           Fetch(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Follow(value, then) ->
           Follow(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Hash(a, b, then) ->
+          Hash(a, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         List(value, then) ->
           List(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Log(value, then) ->
@@ -162,6 +177,14 @@ pub fn list(file) {
 
 fn list_error_reason(message) {
   snag.new("Failed to list: " <> message)
+}
+
+pub fn hash(algorithm, bytes) {
+  Hash(algorithm, bytes, result_to_effect(_, hash_error_reason))
+}
+
+fn hash_error_reason(message) {
+  snag.new("Failed to hash: " <> message)
 }
 
 pub fn read(file) {
