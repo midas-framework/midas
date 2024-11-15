@@ -1,6 +1,7 @@
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/list
+import gleam/option.{type Option}
 import gleam/uri.{type Uri}
 import snag.{type Snag}
 
@@ -20,6 +21,11 @@ pub type Effect(a) {
   List(directory: String, resume: fn(Result(List(String), String)) -> Effect(a))
   Log(message: String, resume: fn(Result(Nil, Nil)) -> Effect(a))
   Read(file: String, resume: fn(Result(BitArray, String)) -> Effect(a))
+  Serve(
+    port: Option(Int),
+    handle: fn(Request(BitArray)) -> Response(BitArray),
+    resume: fn(Result(Nil, String)) -> Effect(a),
+  )
   Write(
     file: String,
     bytes: BitArray,
@@ -47,6 +53,9 @@ pub fn do(eff, then) {
     List(lift, resume) -> List(lift, fn(reply) { do(resume(reply), then) })
     Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
     Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
+    Serve(port, handle, resume) ->
+      Serve(port, handle, fn(reply) { do(resume(reply), then) })
+
     Write(file, bytes, resume) ->
       Write(file, bytes, fn(reply) { do(resume(reply), then) })
     Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
@@ -80,6 +89,8 @@ fn do_sequential(tasks, acc) {
           Log(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Read(value, then) ->
           Read(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Serve(p, h, then) ->
+          Serve(p, h, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Write(f, b, then) ->
           Write(f, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Zip(value, then) ->
@@ -158,6 +169,14 @@ pub fn read(file) {
 
 fn read_error_reason(message) {
   snag.new("Failed to read: " <> message)
+}
+
+pub fn serve(port, handle) {
+  Serve(port, handle, result_to_effect(_, serve_error_reason))
+}
+
+fn serve_error_reason(message) {
+  snag.new("Failed to start server: " <> message)
 }
 
 pub fn write(file, bytes) {
