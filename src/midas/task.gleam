@@ -1,5 +1,5 @@
 import filepath
-import gleam/http/request.{type Request}
+import gleam/http/request.{type Request, Request}
 import gleam/http/response.{type Response}
 import gleam/list
 import gleam/option.{type Option}
@@ -223,6 +223,40 @@ pub fn serve_static(port, files) {
 
 fn serve_error_reason(message) {
   snag.new("Failed to start server: " <> message)
+}
+
+pub fn proxy(task, scheme, host, port, prefix) {
+  case task {
+    Fetch(request, resume) -> {
+      let request = via_proxy(request, scheme, host, port, prefix)
+      Fetch(request, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    }
+    Abort(_) | Done(_) -> task
+    Bundle(f, m, resume) ->
+      Bundle(f, m, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Follow(lift, resume) ->
+      Follow(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Hash(a, b, resume) ->
+      Hash(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    List(lift, resume) ->
+      List(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Log(lift, resume) ->
+      Log(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Read(lift, resume) ->
+      Read(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Serve(p, h, resume) ->
+      Serve(p, h, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Write(a, b, resume) ->
+      Write(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Zip(lift, resume) ->
+      Zip(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+  }
+}
+
+fn via_proxy(original, scheme, host, port, prefix) {
+  let Request(method, headers, body, _scheme, _host, _port, path, query) =
+    original
+  Request(method, headers, body, scheme, host, port, prefix <> path, query)
 }
 
 pub fn write(file, bytes) {
