@@ -274,3 +274,87 @@ pub fn zip(message) {
 fn zip_error_reason(_: Nil) {
   snag.new("Failed to zip.")
 }
+
+pub fn expect_done(task) {
+  case task {
+    Done(value) -> Ok(value)
+    other -> Error(other)
+  }
+}
+
+pub fn expect_abort(task) {
+  case task {
+    Abort(reason) -> Ok(reason)
+    other -> Error(other)
+  }
+}
+
+pub fn expect_bundle(task) {
+  case task {
+    Bundle(module, function, resume) -> Ok(#(module, function, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_follow(task) {
+  case task {
+    Follow(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_fetch(task) {
+  case task {
+    Fetch(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_hash(task) {
+  case task {
+    Hash(algorithm, bytes, resume) -> Ok(#(algorithm, bytes, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_list(task) {
+  case task {
+    List(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_log(task) {
+  case task {
+    Log(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_read(task) {
+  case task {
+    Read(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_serve(task) {
+  case task {
+    Serve(port, handle, resume) -> Ok(#(port, handle, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_write(task) {
+  case task {
+    Write(file, bytes, resume) -> Ok(#(file, bytes, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_zip(task) {
+  case task {
+    Zip(lift, resume) -> Ok(#(lift, resume))
+    other -> Error(other)
+  }
+}

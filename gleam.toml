@@ -1,5 +1,5 @@
 name = "midas"
-version = "1.3.0"
+version = "1.4.0"
 target = "javascript"
 
 description = "Task definition and runners for Gleam"
