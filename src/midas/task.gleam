@@ -21,6 +21,7 @@ pub type Effect(a) {
     function: String,
     resume: fn(Result(String, String)) -> Effect(a),
   )
+  // uri should become a uri type
   Follow(uri: String, resume: fn(Result(Uri, Nil)) -> Effect(a))
   Fetch(
     request: Request(BitArray),
@@ -39,11 +40,13 @@ pub type Effect(a) {
     handle: fn(Request(BitArray)) -> Response(BitArray),
     resume: fn(Result(Nil, String)) -> Effect(a),
   )
+  StrongRandom(length: Int, resume: fn(Result(BitArray, String)) -> Effect(a))
   Write(
     file: String,
     bytes: BitArray,
     resume: fn(Result(Nil, String)) -> Effect(a),
   )
+  Visit(uri: Uri, resume: fn(Result(Nil, String)) -> Effect(a))
   Zip(
     files: List(#(String, BitArray)),
     resume: fn(Result(BitArray, Nil)) -> Effect(a),
@@ -70,8 +73,11 @@ pub fn do(eff, then) {
     Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
     Serve(port, handle, resume) ->
       Serve(port, handle, fn(reply) { do(resume(reply), then) })
+    StrongRandom(length, resume) ->
+      StrongRandom(length, fn(reply) { do(resume(reply), then) })
     Write(file, bytes, resume) ->
       Write(file, bytes, fn(reply) { do(resume(reply), then) })
+    Visit(uri, resume) -> Visit(uri, fn(reply) { do(resume(reply), then) })
     Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
   }
 }
@@ -107,8 +113,14 @@ fn do_sequential(tasks, acc) {
           Read(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Serve(p, h, then) ->
           Serve(p, h, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        StrongRandom(l, then) ->
+          StrongRandom(l, fn(reply) {
+            do_sequential([then(reply), ..rest], acc)
+          })
         Write(f, b, then) ->
           Write(f, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        Visit(uri, then) ->
+          Visit(uri, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         Zip(value, then) ->
           Zip(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
       }
@@ -225,6 +237,14 @@ fn serve_error_reason(message) {
   snag.new("Failed to start server: " <> message)
 }
 
+pub fn strong_random(length) {
+  StrongRandom(length, result_to_effect(_, strong_error_reason))
+}
+
+fn strong_error_reason(message) {
+  snag.new("Failed to generate strong random: " <> message)
+}
+
 pub fn proxy(task, scheme, host, port, prefix) {
   case task {
     Fetch(request, resume) -> {
@@ -246,8 +266,12 @@ pub fn proxy(task, scheme, host, port, prefix) {
       Read(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     Serve(p, h, resume) ->
       Serve(p, h, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    StrongRandom(l, resume) ->
+      StrongRandom(l, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     Write(a, b, resume) ->
       Write(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    Visit(uri, resume) ->
+      Visit(uri, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     Zip(lift, resume) ->
       Zip(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
   }
@@ -265,6 +289,14 @@ pub fn write(file, bytes) {
 
 fn write_error_reason(message) {
   snag.new("Failed to write: " <> message)
+}
+
+pub fn visit(message) {
+  Visit(message, result_to_effect(_, visit_error_reason))
+}
+
+fn visit_error_reason(reason) {
+  snag.new("Failed to visit: " <> reason)
 }
 
 pub fn zip(message) {
@@ -345,9 +377,23 @@ pub fn expect_serve(task) {
   }
 }
 
+pub fn expect_strong_random(task) {
+  case task {
+    StrongRandom(length, resume) -> Ok(#(length, resume))
+    other -> Error(other)
+  }
+}
+
 pub fn expect_write(task) {
   case task {
     Write(file, bytes, resume) -> Ok(#(file, bytes, resume))
+    other -> Error(other)
+  }
+}
+
+pub fn expect_visit(task) {
+  case task {
+    Visit(uri, resume) -> Ok(#(uri, resume))
     other -> Error(other)
   }
 }
