@@ -194,6 +194,31 @@ fn do_sequential(tasks, acc) {
   }
 }
 
+pub fn catch_error(task) {
+  case task {
+    Done(result) -> done(Ok(result))
+    Abort(reason) -> done(Error(reason))
+    Bundle(f, m, resume) -> Bundle(f, m, fn(x) { catch_error(resume(x)) })
+    ExportJsonWebKey(k, resume) ->
+      ExportJsonWebKey(k, fn(x) { catch_error(resume(x)) })
+    Fetch(request, resume) -> Fetch(request, fn(x) { catch_error(resume(x)) })
+    Follow(lift, resume) -> Follow(lift, fn(x) { catch_error(resume(x)) })
+    GenerateKeyPair(a, e, u, resume) ->
+      GenerateKeyPair(a, e, u, fn(x) { catch_error(resume(x)) })
+    Hash(a, b, resume) -> Hash(a, b, fn(x) { catch_error(resume(x)) })
+    List(lift, resume) -> List(lift, fn(x) { catch_error(resume(x)) })
+    Log(lift, resume) -> Log(lift, fn(x) { catch_error(resume(x)) })
+    Read(lift, resume) -> Read(lift, fn(x) { catch_error(resume(x)) })
+    Serve(p, h, resume) -> Serve(p, h, fn(x) { catch_error(resume(x)) })
+    Sign(a, k, d, resume) -> Sign(a, k, d, fn(x) { catch_error(resume(x)) })
+    StrongRandom(l, resume) -> StrongRandom(l, fn(x) { catch_error(resume(x)) })
+    UnixNow(resume) -> UnixNow(fn(x) { catch_error(resume(x)) })
+    Visit(uri, resume) -> Visit(uri, fn(x) { catch_error(resume(x)) })
+    Write(a, b, resume) -> Write(a, b, fn(x) { catch_error(resume(x)) })
+    Zip(lift, resume) -> Zip(lift, fn(x) { catch_error(resume(x)) })
+  }
+}
+
 pub fn try(result, then) {
   case result {
     Ok(value) -> then(value)
