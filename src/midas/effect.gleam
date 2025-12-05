@@ -14,10 +14,10 @@ import gleam/option.{type Option}
 import gleam/uri.{type Uri}
 
 pub type HashAlgorithm {
-  SHA1
-  SHA256
-  SHA384
-  SHA512
+  Sha1
+  Sha256
+  Sha384
+  Sha512
 }
 
 pub type KeyPair(key) {
@@ -54,8 +54,7 @@ pub type Effect(a, key) {
     key: key,
     resume: fn(Result(json.Json, String)) -> Effect(a, key),
   )
-  // uri should become a uri type
-  Follow(uri: String, resume: fn(Result(Uri, Nil)) -> Effect(a, key))
+  Follow(uri: Uri, resume: fn(Result(Uri, Nil)) -> Effect(a, key))
   Fetch(
     request: Request(BitArray),
     resume: fn(Result(Response(BitArray), FetchError)) -> Effect(a, key),
