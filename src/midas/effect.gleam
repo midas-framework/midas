@@ -104,6 +104,70 @@ pub type Effect(a, key) {
   UnixNow(resume: fn(Int) -> Effect(a, key))
 }
 
+pub fn bundle(module, function) {
+  Bundle(module, function, Done)
+}
+
+pub fn export_jwk(key) {
+  ExportJsonWebKey(key, Done)
+}
+
+pub fn fetch(request) {
+  Fetch(request, Done)
+}
+
+pub fn follow(uri) {
+  Follow(uri, Done)
+}
+
+pub fn generate_keypair(algorithm, extractable, usages) {
+  GenerateKeyPair(algorithm, extractable, usages, Done)
+}
+
+pub fn hash(algorithm, bytes) {
+  Hash(algorithm, bytes, Done)
+}
+
+pub fn list(directory) {
+  List(directory, Done)
+}
+
+pub fn log(message) {
+  Log(message, Done)
+}
+
+pub fn read(file) {
+  Read(file, Done)
+}
+
+pub fn serve(port, handle) {
+  Serve(port, handle, Done)
+}
+
+pub fn sign(algorithm, key, data) {
+  Sign(algorithm, key, data, Done)
+}
+
+pub fn strong_random(length) {
+  StrongRandom(length, Done)
+}
+
+pub fn write(file, bytes) {
+  Write(file, bytes, Done)
+}
+
+pub fn visit(uri) {
+  Visit(uri, Done)
+}
+
+pub fn zip(files) {
+  Zip(files, Done)
+}
+
+pub fn unix_now() {
+  UnixNow(Done)
+}
+
 pub type FetchError {
   NetworkError(String)
   UnableToReadBody
