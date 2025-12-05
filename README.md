@@ -56,7 +56,7 @@ However this difference blocks us from reusing `my_func` as it is.
 
 ### The solution
 
-Instead of passing in the client our code return data type with information on what to do next.
+Instead of passing in the client, our code return data type with information on what to do next.
 In this example our code is either finished or needs to make an HTTP request.
 We call this returned type `Effect` and it has two variants `Fetch` and `Done`.
 
