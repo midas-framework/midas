@@ -6,9 +6,10 @@ import snag
 
 /// A task is an effect that returns a result.
 /// All errors in a task are snag Errors.
-pub type Task(return, key) =
-  e.Effect(snag.Result(return), key)
+pub type Task(return, reason, key) =
+  e.Effect(Result(return, reason), key)
 
+/// Compose a task with a function that returns a task.
 pub fn do(eff, next) {
   e.do(eff, fn(value) {
     case value {
@@ -18,6 +19,7 @@ pub fn do(eff, next) {
   })
 }
 
+/// Work with results that are not effectful.
 pub fn try(result, then) {
   case result {
     Ok(value) -> then(value)
@@ -25,10 +27,12 @@ pub fn try(result, then) {
   }
 }
 
+/// A task has completed successfully
 pub fn done(value) {
   e.Done(Ok(value))
 }
 
+/// A task is done with an error
 pub fn abort(reason) {
   e.Done(Error(reason))
 }
@@ -37,7 +41,7 @@ pub fn each(items, run) {
   sequential(list.map(items, run))
 }
 
-pub fn sequential(tasks: List(Task(return, key))) -> Task(List(return), key) {
+pub fn sequential(tasks) {
   do_sequential(tasks, [])
 }
 
