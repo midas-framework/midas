@@ -14,7 +14,7 @@ gleam add midas
 ## Task definition vs running a task
 
 Midas separates defining tasks from running tasks.
-The `midas/task` module is for defining tasks, this is normally the module you want to start with.
+The `midas/task` module is for defining tasks.
 
 ```gleam
 import midas/task as t

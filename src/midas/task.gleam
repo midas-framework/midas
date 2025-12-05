@@ -4,8 +4,9 @@ import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
 import gleam/option.{type Option}
+import gleam/result
 import gleam/uri.{type Uri}
-import snag.{type Snag}
+import snag
 
 pub type HashAlgorithm {
   SHA1
@@ -39,7 +40,6 @@ pub type SignAlgorithm {
 
 pub type Effect(a, key) {
   Done(a)
-  Abort(Snag)
   Bundle(
     module: String,
     function: String,
@@ -106,33 +106,43 @@ pub type FetchError {
   NotImplemented
 }
 
-pub fn do(eff, then) {
+pub fn do(eff, next) {
+  then(eff, fn(value) {
+    case value {
+      Ok(v) -> next(v)
+      Error(reason) -> Done(Error(reason))
+    }
+  })
+}
+
+pub fn then(eff, next) {
   case eff {
-    Done(value) -> then(value)
-    Abort(reason) -> Abort(reason)
-    Bundle(m, f, resume) -> Bundle(m, f, fn(reply) { do(resume(reply), then) })
+    Done(value) -> next(value)
+    Bundle(m, f, resume) ->
+      Bundle(m, f, fn(reply) { then(resume(reply), next) })
     ExportJsonWebKey(k, resume) ->
-      ExportJsonWebKey(k, fn(reply) { do(resume(reply), then) })
-    Follow(lift, resume) -> Follow(lift, fn(reply) { do(resume(reply), then) })
-    Fetch(lift, resume) -> Fetch(lift, fn(reply) { do(resume(reply), then) })
+      ExportJsonWebKey(k, fn(reply) { then(resume(reply), next) })
+    Follow(lift, resume) ->
+      Follow(lift, fn(reply) { then(resume(reply), next) })
+    Fetch(lift, resume) -> Fetch(lift, fn(reply) { then(resume(reply), next) })
     GenerateKeyPair(a, e, u, resume) ->
-      GenerateKeyPair(a, e, u, fn(reply) { do(resume(reply), then) })
+      GenerateKeyPair(a, e, u, fn(reply) { then(resume(reply), next) })
     Hash(algorithm, bytes, resume) ->
-      Hash(algorithm, bytes, fn(reply) { do(resume(reply), then) })
-    List(lift, resume) -> List(lift, fn(reply) { do(resume(reply), then) })
-    Log(lift, resume) -> Log(lift, fn(reply) { do(resume(reply), then) })
-    Read(lift, resume) -> Read(lift, fn(reply) { do(resume(reply), then) })
+      Hash(algorithm, bytes, fn(reply) { then(resume(reply), next) })
+    List(lift, resume) -> List(lift, fn(reply) { then(resume(reply), next) })
+    Log(lift, resume) -> Log(lift, fn(reply) { then(resume(reply), next) })
+    Read(lift, resume) -> Read(lift, fn(reply) { then(resume(reply), next) })
     Serve(port, handle, resume) ->
-      Serve(port, handle, fn(reply) { do(resume(reply), then) })
+      Serve(port, handle, fn(reply) { then(resume(reply), next) })
     Sign(a, k, d, resume) ->
-      Sign(a, k, d, fn(reply) { do(resume(reply), then) })
+      Sign(a, k, d, fn(reply) { then(resume(reply), next) })
     StrongRandom(length, resume) ->
-      StrongRandom(length, fn(reply) { do(resume(reply), then) })
-    UnixNow(resume) -> UnixNow(fn(reply) { do(resume(reply), then) })
-    Visit(uri, resume) -> Visit(uri, fn(reply) { do(resume(reply), then) })
+      StrongRandom(length, fn(reply) { then(resume(reply), next) })
+    UnixNow(resume) -> UnixNow(fn(reply) { then(resume(reply), next) })
+    Visit(uri, resume) -> Visit(uri, fn(reply) { then(resume(reply), next) })
     Write(file, bytes, resume) ->
-      Write(file, bytes, fn(reply) { do(resume(reply), then) })
-    Zip(lift, resume) -> Zip(lift, fn(reply) { do(resume(reply), then) })
+      Write(file, bytes, fn(reply) { then(resume(reply), next) })
+    Zip(lift, resume) -> Zip(lift, fn(reply) { then(resume(reply), next) })
   }
 }
 
@@ -150,7 +160,6 @@ fn do_sequential(tasks, acc) {
     [next, ..rest] -> {
       case next {
         Done(x) -> do_sequential(rest, [x, ..acc])
-        Abort(reason) -> Abort(reason)
         Bundle(m, f, then) ->
           Bundle(m, f, fn(reply) { do_sequential([then(reply), ..rest], acc) })
         ExportJsonWebKey(k, then) ->
@@ -194,51 +203,23 @@ fn do_sequential(tasks, acc) {
   }
 }
 
-pub fn catch_error(task) {
-  case task {
-    Done(result) -> done(Ok(result))
-    Abort(reason) -> done(Error(reason))
-    Bundle(f, m, resume) -> Bundle(f, m, fn(x) { catch_error(resume(x)) })
-    ExportJsonWebKey(k, resume) ->
-      ExportJsonWebKey(k, fn(x) { catch_error(resume(x)) })
-    Fetch(request, resume) -> Fetch(request, fn(x) { catch_error(resume(x)) })
-    Follow(lift, resume) -> Follow(lift, fn(x) { catch_error(resume(x)) })
-    GenerateKeyPair(a, e, u, resume) ->
-      GenerateKeyPair(a, e, u, fn(x) { catch_error(resume(x)) })
-    Hash(a, b, resume) -> Hash(a, b, fn(x) { catch_error(resume(x)) })
-    List(lift, resume) -> List(lift, fn(x) { catch_error(resume(x)) })
-    Log(lift, resume) -> Log(lift, fn(x) { catch_error(resume(x)) })
-    Read(lift, resume) -> Read(lift, fn(x) { catch_error(resume(x)) })
-    Serve(p, h, resume) -> Serve(p, h, fn(x) { catch_error(resume(x)) })
-    Sign(a, k, d, resume) -> Sign(a, k, d, fn(x) { catch_error(resume(x)) })
-    StrongRandom(l, resume) -> StrongRandom(l, fn(x) { catch_error(resume(x)) })
-    UnixNow(resume) -> UnixNow(fn(x) { catch_error(resume(x)) })
-    Visit(uri, resume) -> Visit(uri, fn(x) { catch_error(resume(x)) })
-    Write(a, b, resume) -> Write(a, b, fn(x) { catch_error(resume(x)) })
-    Zip(lift, resume) -> Zip(lift, fn(x) { catch_error(resume(x)) })
-  }
-}
-
 pub fn try(result, then) {
   case result {
     Ok(value) -> then(value)
-    Error(reason) -> Abort(reason)
+    Error(reason) -> Done(Error(reason))
   }
 }
 
 fn result_to_effect(result, error_handler) {
-  case result {
-    Ok(value) -> Done(value)
-    Error(reason) -> Abort(error_handler(reason))
-  }
+  Done(result.map_error(result, error_handler))
 }
 
 pub fn done(value) {
-  Done(value)
+  Done(Ok(value))
 }
 
 pub fn abort(value) {
-  Abort(value)
+  Done(Error(value))
 }
 
 pub fn bundle(m, f) {
@@ -369,7 +350,7 @@ pub fn proxy(task, scheme, host, port, prefix) {
       let request = via_proxy(request, scheme, host, port, prefix)
       Fetch(request, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     }
-    Abort(_) | Done(_) -> task
+    Done(_) -> task
     Bundle(f, m, resume) ->
       Bundle(f, m, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     ExportJsonWebKey(k, resume) ->
@@ -448,7 +429,7 @@ pub fn expect_done(task) {
 
 pub fn expect_abort(task) {
   case task {
-    Abort(reason) -> Ok(reason)
+    Done(Error(reason)) -> Ok(reason)
     other -> Error(other)
   }
 }
