@@ -1,233 +1,110 @@
-import filepath
-import gleam/http/request.{type Request, Request}
-import gleam/http/response.{type Response}
-import gleam/json
+import gleam/http/request.{Request}
 import gleam/list
-import gleam/option.{type Option}
 import gleam/result
-import gleam/uri.{type Uri}
+import midas/effect as e
 import snag
 
-pub type HashAlgorithm {
-  SHA1
-  SHA256
-  SHA384
-  SHA512
-}
-
-pub type KeyPair(key) {
-  KeyPair(public: key, private: key)
-}
-
-pub type KeyPairAlgorithm {
-  EcKeyGenParams(name: String, named_curve: String)
-}
-
-pub type KeyUsage {
-  CanEncrypt
-  CanDecrypt
-  CanSign
-  CanVerify
-  CanDeriveKey
-  CanDeriveBits
-  CanWrapKey
-  CanUnwrapKey
-}
-
-pub type SignAlgorithm {
-  EcdsaParams(hash: HashAlgorithm)
-}
-
-pub type Effect(a, key) {
-  Done(a)
-  Bundle(
-    module: String,
-    function: String,
-    resume: fn(Result(String, String)) -> Effect(a, key),
-  )
-  ExportJsonWebKey(
-    key: key,
-    resume: fn(Result(json.Json, String)) -> Effect(a, key),
-  )
-  // uri should become a uri type
-  Follow(uri: String, resume: fn(Result(Uri, Nil)) -> Effect(a, key))
-  Fetch(
-    request: Request(BitArray),
-    resume: fn(Result(Response(BitArray), FetchError)) -> Effect(a, key),
-  )
-  GenerateKeyPair(
-    algorithm: KeyPairAlgorithm,
-    extractable: Bool,
-    usages: List(KeyUsage),
-    resume: fn(Result(KeyPair(key), String)) -> Effect(a, key),
-  )
-  Hash(
-    algorithm: HashAlgorithm,
-    bytes: BitArray,
-    resume: fn(Result(BitArray, String)) -> Effect(a, key),
-  )
-  List(
-    directory: String,
-    resume: fn(Result(List(String), String)) -> Effect(a, key),
-  )
-  Log(message: String, resume: fn(Result(Nil, Nil)) -> Effect(a, key))
-  Read(file: String, resume: fn(Result(BitArray, String)) -> Effect(a, key))
-  Serve(
-    port: Option(Int),
-    handle: fn(Request(BitArray)) -> Response(BitArray),
-    resume: fn(Result(Nil, String)) -> Effect(a, key),
-  )
-  Sign(
-    algorithm: SignAlgorithm,
-    key: key,
-    data: BitArray,
-    resume: fn(Result(BitArray, String)) -> Effect(a, key),
-  )
-  StrongRandom(
-    length: Int,
-    resume: fn(Result(BitArray, String)) -> Effect(a, key),
-  )
-  Write(
-    file: String,
-    bytes: BitArray,
-    resume: fn(Result(Nil, String)) -> Effect(a, key),
-  )
-  Visit(uri: Uri, resume: fn(Result(Nil, String)) -> Effect(a, key))
-  Zip(
-    files: List(#(String, BitArray)),
-    resume: fn(Result(BitArray, Nil)) -> Effect(a, key),
-  )
-  UnixNow(resume: fn(Int) -> Effect(a, key))
-}
-
-pub type FetchError {
-  NetworkError(String)
-  UnableToReadBody
-  NotImplemented
-}
+/// A task is an effect that returns a result.
+/// All errors in a task are snag Errors.
+pub type Task(return, key) =
+  e.Effect(snag.Result(return), key)
 
 pub fn do(eff, next) {
-  then(eff, fn(value) {
+  e.do(eff, fn(value) {
     case value {
       Ok(v) -> next(v)
-      Error(reason) -> Done(Error(reason))
+      Error(reason) -> e.Done(Error(reason))
     }
   })
 }
 
-pub fn then(eff, next) {
-  case eff {
-    Done(value) -> next(value)
-    Bundle(m, f, resume) ->
-      Bundle(m, f, fn(reply) { then(resume(reply), next) })
-    ExportJsonWebKey(k, resume) ->
-      ExportJsonWebKey(k, fn(reply) { then(resume(reply), next) })
-    Follow(lift, resume) ->
-      Follow(lift, fn(reply) { then(resume(reply), next) })
-    Fetch(lift, resume) -> Fetch(lift, fn(reply) { then(resume(reply), next) })
-    GenerateKeyPair(a, e, u, resume) ->
-      GenerateKeyPair(a, e, u, fn(reply) { then(resume(reply), next) })
-    Hash(algorithm, bytes, resume) ->
-      Hash(algorithm, bytes, fn(reply) { then(resume(reply), next) })
-    List(lift, resume) -> List(lift, fn(reply) { then(resume(reply), next) })
-    Log(lift, resume) -> Log(lift, fn(reply) { then(resume(reply), next) })
-    Read(lift, resume) -> Read(lift, fn(reply) { then(resume(reply), next) })
-    Serve(port, handle, resume) ->
-      Serve(port, handle, fn(reply) { then(resume(reply), next) })
-    Sign(a, k, d, resume) ->
-      Sign(a, k, d, fn(reply) { then(resume(reply), next) })
-    StrongRandom(length, resume) ->
-      StrongRandom(length, fn(reply) { then(resume(reply), next) })
-    UnixNow(resume) -> UnixNow(fn(reply) { then(resume(reply), next) })
-    Visit(uri, resume) -> Visit(uri, fn(reply) { then(resume(reply), next) })
-    Write(file, bytes, resume) ->
-      Write(file, bytes, fn(reply) { then(resume(reply), next) })
-    Zip(lift, resume) -> Zip(lift, fn(reply) { then(resume(reply), next) })
+pub fn try(result, then) {
+  case result {
+    Ok(value) -> then(value)
+    Error(reason) -> e.Done(Error(reason))
   }
+}
+
+pub fn done(value) {
+  e.Done(Ok(value))
+}
+
+pub fn abort(reason) {
+  e.Done(Error(reason))
 }
 
 pub fn each(items, run) {
   sequential(list.map(items, run))
 }
 
-pub fn sequential(tasks) {
+pub fn sequential(tasks: List(Task(return, key))) -> Task(List(return), key) {
   do_sequential(tasks, [])
 }
 
 fn do_sequential(tasks, acc) {
   case tasks {
-    [] -> Done(list.reverse(acc))
+    [] -> e.Done(Ok(list.reverse(acc)))
     [next, ..rest] -> {
       case next {
-        Done(x) -> do_sequential(rest, [x, ..acc])
-        Bundle(m, f, then) ->
-          Bundle(m, f, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        ExportJsonWebKey(k, then) ->
-          ExportJsonWebKey(k, fn(reply) {
+        e.Done(Ok(x)) -> do_sequential(rest, [x, ..acc])
+        e.Done(Error(reason)) -> e.Done(Error(reason))
+        e.Bundle(m, f, then) ->
+          e.Bundle(m, f, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.ExportJsonWebKey(k, then) ->
+          e.ExportJsonWebKey(k, fn(reply) {
             do_sequential([then(reply), ..rest], acc)
           })
-        Fetch(value, then) ->
-          Fetch(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Follow(value, then) ->
-          Follow(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        GenerateKeyPair(a, e, u, then) ->
-          GenerateKeyPair(a, e, u, fn(reply) {
+        e.Fetch(value, then) ->
+          e.Fetch(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Follow(value, then) ->
+          e.Follow(value, fn(reply) {
             do_sequential([then(reply), ..rest], acc)
           })
-        Hash(a, b, then) ->
-          Hash(a, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        List(value, then) ->
-          List(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Log(value, then) ->
-          Log(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Read(value, then) ->
-          Read(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Serve(p, h, then) ->
-          Serve(p, h, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Sign(a, k, d, then) ->
-          Sign(a, k, d, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        StrongRandom(l, then) ->
-          StrongRandom(l, fn(reply) {
+        e.GenerateKeyPair(a, e, u, then) ->
+          e.GenerateKeyPair(a, e, u, fn(reply) {
             do_sequential([then(reply), ..rest], acc)
           })
-        UnixNow(then) ->
-          UnixNow(fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Visit(uri, then) ->
-          Visit(uri, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Write(f, b, then) ->
-          Write(f, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
-        Zip(value, then) ->
-          Zip(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Hash(a, b, then) ->
+          e.Hash(a, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.List(value, then) ->
+          e.List(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Log(value, then) ->
+          e.Log(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Read(value, then) ->
+          e.Read(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Serve(p, h, then) ->
+          e.Serve(p, h, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Sign(a, k, d, then) ->
+          e.Sign(a, k, d, fn(reply) {
+            do_sequential([then(reply), ..rest], acc)
+          })
+        e.StrongRandom(l, then) ->
+          e.StrongRandom(l, fn(reply) {
+            do_sequential([then(reply), ..rest], acc)
+          })
+        e.UnixNow(then) ->
+          e.UnixNow(fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Visit(uri, then) ->
+          e.Visit(uri, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Write(f, b, then) ->
+          e.Write(f, b, fn(reply) { do_sequential([then(reply), ..rest], acc) })
+        e.Zip(value, then) ->
+          e.Zip(value, fn(reply) { do_sequential([then(reply), ..rest], acc) })
       }
     }
   }
 }
 
-pub fn try(result, then) {
-  case result {
-    Ok(value) -> then(value)
-    Error(reason) -> Done(Error(reason))
-  }
-}
-
 fn result_to_effect(result, error_handler) {
-  Done(result.map_error(result, error_handler))
-}
-
-pub fn done(value) {
-  Done(Ok(value))
-}
-
-pub fn abort(value) {
-  Done(Error(value))
+  e.Done(result.map_error(result, error_handler))
 }
 
 pub fn bundle(m, f) {
-  Bundle(m, f, result_to_effect(_, snag.new))
+  e.Bundle(m, f, result_to_effect(_, snag.new))
 }
 
 pub fn export_jwk(key) {
-  ExportJsonWebKey(key, result_to_effect(_, export_jwk_error_reason))
+  e.ExportJsonWebKey(key, result_to_effect(_, export_jwk_error_reason))
 }
 
 fn export_jwk_error_reason(message) {
@@ -235,20 +112,20 @@ fn export_jwk_error_reason(message) {
 }
 
 pub fn fetch(request) {
-  Fetch(request, result_to_effect(_, fetch_error_reason))
+  e.Fetch(request, result_to_effect(_, fetch_error_reason))
 }
 
 fn fetch_error_reason(reason) {
   case reason {
-    NetworkError(message) -> "Network Error: " <> message
-    UnableToReadBody -> "UnableToReadBody"
-    NotImplemented -> "NotImplemented"
+    e.NetworkError(message) -> "Network Error: " <> message
+    e.UnableToReadBody -> "UnableToReadBody"
+    e.NotImplemented -> "NotImplemented"
   }
   |> snag.new
 }
 
 pub fn follow(uri) {
-  Follow(uri, result_to_effect(_, follow_error_reason))
+  e.Follow(uri, result_to_effect(_, follow_error_reason))
 }
 
 fn follow_error_reason(_: Nil) {
@@ -256,7 +133,7 @@ fn follow_error_reason(_: Nil) {
 }
 
 pub fn log(message) {
-  Log(message, result_to_effect(_, log_error_reason))
+  e.Log(message, result_to_effect(_, log_error_reason))
 }
 
 fn log_error_reason(_: Nil) {
@@ -264,7 +141,7 @@ fn log_error_reason(_: Nil) {
 }
 
 pub fn list(file) {
-  List(file, result_to_effect(_, list_error_reason))
+  e.List(file, result_to_effect(_, list_error_reason))
 }
 
 fn list_error_reason(message) {
@@ -272,7 +149,7 @@ fn list_error_reason(message) {
 }
 
 pub fn generate_keypair(algorithm, extractable, usages) {
-  GenerateKeyPair(algorithm, extractable, usages, result_to_effect(
+  e.GenerateKeyPair(algorithm, extractable, usages, result_to_effect(
     _,
     generate_keypair_error_reason,
   ))
@@ -283,7 +160,7 @@ fn generate_keypair_error_reason(message) {
 }
 
 pub fn hash(algorithm, bytes) {
-  Hash(algorithm, bytes, result_to_effect(_, hash_error_reason))
+  e.Hash(algorithm, bytes, result_to_effect(_, hash_error_reason))
 }
 
 fn hash_error_reason(message) {
@@ -291,7 +168,7 @@ fn hash_error_reason(message) {
 }
 
 pub fn read(file) {
-  Read(file, result_to_effect(_, read_error_reason))
+  e.Read(file, result_to_effect(_, read_error_reason))
 }
 
 fn read_error_reason(message) {
@@ -299,7 +176,7 @@ fn read_error_reason(message) {
 }
 
 pub fn sign(algorithm, key, data) {
-  Sign(algorithm, key, data, result_to_effect(_, sign_error_reason))
+  e.Sign(algorithm, key, data, result_to_effect(_, sign_error_reason))
 }
 
 fn sign_error_reason(message) {
@@ -307,29 +184,7 @@ fn sign_error_reason(message) {
 }
 
 pub fn serve(port, handle) {
-  Serve(port, handle, result_to_effect(_, serve_error_reason))
-}
-
-pub fn serve_static(port, files) {
-  let handle = fn(request) {
-    let request.Request(path: path, ..) = request
-    let mime = case filepath.extension(path) {
-      Ok(".js") -> "application/javascript"
-      Ok(_) -> "application/octet-stream"
-      // index pages are assumed to be html
-      Error(Nil) -> "text/html"
-    }
-    case list.key_find(files, path) {
-      Ok(content) ->
-        response.new(200)
-        |> response.set_header("content-type", mime)
-        |> response.set_body(content)
-      Error(Nil) ->
-        response.new(404)
-        |> response.set_body(<<>>)
-    }
-  }
-  serve(port, handle)
+  e.Serve(port, handle, result_to_effect(_, serve_error_reason))
 }
 
 fn serve_error_reason(message) {
@@ -337,7 +192,7 @@ fn serve_error_reason(message) {
 }
 
 pub fn strong_random(length) {
-  StrongRandom(length, result_to_effect(_, strong_error_reason))
+  e.StrongRandom(length, result_to_effect(_, strong_error_reason))
 }
 
 fn strong_error_reason(message) {
@@ -346,43 +201,45 @@ fn strong_error_reason(message) {
 
 pub fn proxy(task, scheme, host, port, prefix) {
   case task {
-    Fetch(request, resume) -> {
+    e.Done(_) -> task
+    e.Fetch(request, resume) -> {
       let request = via_proxy(request, scheme, host, port, prefix)
-      Fetch(request, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+      e.Fetch(request, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
     }
-    Done(_) -> task
-    Bundle(f, m, resume) ->
-      Bundle(f, m, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    ExportJsonWebKey(k, resume) ->
-      ExportJsonWebKey(k, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Follow(lift, resume) ->
-      Follow(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    GenerateKeyPair(a, e, u, resume) ->
-      GenerateKeyPair(a, e, u, fn(x) {
+    e.Bundle(f, m, resume) ->
+      e.Bundle(f, m, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.ExportJsonWebKey(k, resume) ->
+      e.ExportJsonWebKey(k, fn(x) {
         proxy(resume(x), scheme, host, port, prefix)
       })
-    Hash(a, b, resume) ->
-      Hash(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    List(lift, resume) ->
-      List(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Log(lift, resume) ->
-      Log(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Read(lift, resume) ->
-      Read(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Serve(p, h, resume) ->
-      Serve(p, h, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Sign(a, k, d, resume) ->
-      Sign(a, k, d, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    StrongRandom(l, resume) ->
-      StrongRandom(l, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    UnixNow(resume) ->
-      UnixNow(fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Visit(uri, resume) ->
-      Visit(uri, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Write(a, b, resume) ->
-      Write(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
-    Zip(lift, resume) ->
-      Zip(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Follow(lift, resume) ->
+      e.Follow(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.GenerateKeyPair(a, e, u, resume) ->
+      e.GenerateKeyPair(a, e, u, fn(x) {
+        proxy(resume(x), scheme, host, port, prefix)
+      })
+    e.Hash(a, b, resume) ->
+      e.Hash(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.List(lift, resume) ->
+      e.List(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Log(lift, resume) ->
+      e.Log(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Read(lift, resume) ->
+      e.Read(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Serve(p, h, resume) ->
+      e.Serve(p, h, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Sign(a, k, d, resume) ->
+      e.Sign(a, k, d, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.StrongRandom(l, resume) ->
+      e.StrongRandom(l, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.UnixNow(resume) ->
+      e.UnixNow(fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Visit(uri, resume) ->
+      e.Visit(uri, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Write(a, b, resume) ->
+      e.Write(a, b, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
+    e.Zip(lift, resume) ->
+      e.Zip(lift, fn(x) { proxy(resume(x), scheme, host, port, prefix) })
   }
 }
 
@@ -393,11 +250,11 @@ fn via_proxy(original, scheme, host, port, prefix) {
 }
 
 pub fn unix_now() {
-  UnixNow(done)
+  e.UnixNow(done)
 }
 
 pub fn visit(message) {
-  Visit(message, result_to_effect(_, visit_error_reason))
+  e.Visit(message, result_to_effect(_, visit_error_reason))
 }
 
 fn visit_error_reason(reason) {
@@ -405,7 +262,7 @@ fn visit_error_reason(reason) {
 }
 
 pub fn write(file, bytes) {
-  Write(file, bytes, result_to_effect(_, write_error_reason))
+  e.Write(file, bytes, result_to_effect(_, write_error_reason))
 }
 
 fn write_error_reason(message) {
@@ -413,136 +270,9 @@ fn write_error_reason(message) {
 }
 
 pub fn zip(message) {
-  Zip(message, result_to_effect(_, zip_error_reason))
+  e.Zip(message, result_to_effect(_, zip_error_reason))
 }
 
 fn zip_error_reason(_: Nil) {
   snag.new("Failed to zip.")
-}
-
-pub fn expect_done(task) {
-  case task {
-    Done(value) -> Ok(value)
-    other -> Error(other)
-  }
-}
-
-pub fn expect_abort(task) {
-  case task {
-    Done(Error(reason)) -> Ok(reason)
-    other -> Error(other)
-  }
-}
-
-pub fn expect_bundle(task) {
-  case task {
-    Bundle(module, function, resume) -> Ok(#(module, function, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_export_jwk(task) {
-  case task {
-    ExportJsonWebKey(key, resume) -> Ok(#(key, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_follow(task) {
-  case task {
-    Follow(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_fetch(task) {
-  case task {
-    Fetch(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_generate_keypair(task) {
-  case task {
-    GenerateKeyPair(alg, extractable, usages, resume) ->
-      Ok(#(alg, extractable, usages, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_hash(task) {
-  case task {
-    Hash(algorithm, bytes, resume) -> Ok(#(algorithm, bytes, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_list(task) {
-  case task {
-    List(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_log(task) {
-  case task {
-    Log(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_read(task) {
-  case task {
-    Read(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_serve(task) {
-  case task {
-    Serve(port, handle, resume) -> Ok(#(port, handle, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_sign(task) {
-  case task {
-    Sign(alg, key, data, resume) -> Ok(#(alg, key, data, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_strong_random(task) {
-  case task {
-    StrongRandom(length, resume) -> Ok(#(length, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_unix_now(task) {
-  case task {
-    UnixNow(resume) -> Ok(resume)
-    other -> Error(other)
-  }
-}
-
-pub fn expect_visit(task) {
-  case task {
-    Visit(uri, resume) -> Ok(#(uri, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_write(task) {
-  case task {
-    Write(file, bytes, resume) -> Ok(#(file, bytes, resume))
-    other -> Error(other)
-  }
-}
-
-pub fn expect_zip(task) {
-  case task {
-    Zip(lift, resume) -> Ok(#(lift, resume))
-    other -> Error(other)
-  }
 }
