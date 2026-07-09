@@ -6,6 +6,8 @@
 Midas tackles the function colouring problem by separating defining and running effectful code.
 It provides a description of effects, as well functions for composing effectful computation.
 
+**Midas is migrating to a continuation based approach see the `cont` module.**
+
 This separation has several benefits:
 - Reuse code across environments
 - Switch out implementations, i.e. choose different HTTP clients
