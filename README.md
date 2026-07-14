@@ -3,196 +3,137 @@
 [![Package Version](https://img.shields.io/hexpm/v/midas)](https://hex.pm/packages/midas)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/midas/)
 
-Midas tackles the function colouring problem by separating defining and running effectful code.
-It provides a description of effects, as well functions for composing effectful computation.
+Separate defining and running effectful code.
+Midas builds on the continuation monad to abstract effectful code, so that it can be reused on JS and BEAM runtimes.
 
-**Midas is migrating to a continuation based approach see the `cont` module.**
-
-This separation has several benefits:
+Benefits of abstracting effects include:
 - Reuse code across environments
 - Switch out implementations, i.e. choose different HTTP clients
 - No need to use mocks for testing.
 - Allows middleware, for example to add spans for tracing.
 
 ```sh
-gleam add midas@2
+gleam add midas@3
 ```
 
-## Why Midas
+### Example
 
-Already sold jump to [Usage](#usage)
+Start with some business logic that is to be reused over JavaScript and the BEAM runtimes.
+This logic is going to require making HTTP requests.
 
-### The goal
-
-Let's imagine we have some code that we want to run on JavaScript and the BEAM.
-Also suppose that this code needs to make http requests.
-
-Ideally we write something like the following.
+With continuations we can specify all our logic in a portable task.
 
 ```gleam
-fn my_func(send){
+import midas/continuation.{type Continuation as K, done, try_then}
+import midas/effect
+
+pub type Context {
+  Context(fetch: effect.Fetch(t))
+}
+
+fn task(context: Context) -> K(t,Result(String, effect.FetchError)) {
   let request_a = request.new() |> request.set_path("/a")
-  let result_a = send(request_a)
-  let assert Ok(a) = result_a
+  let a = try_then(request_a)
+  
+  let request_b = request.new() |> request.set_path("/b")
+  let b = try_then(request_b)
 
-  let request_b = request.new() |> request.set_path("/a")
-  let result_b = send(request_b)
-  let assert Ok(b) = result_b
-
-  todo as "something with a and b"
+  done("Finished")
 }
 ```
 
-The simple approach here is to pass the client at runtime so different HTTP clients can be used on each runtime.
+- This task is portable and runners for each of BEAM, JS and testing can be implemented.
+- A `Context` type is not necessary but is useful if more than one effect is needed.
+- The type `effect.Fetch(t)` is an alias for `fn(Request(BitArray)) -> K(t, Result(response.Response(BitArray), FetchError))`.
+  `midas/effect` defines some useful effects but any effect can be specified.
+- This task works over a continuation that returns a result, `done` and `try_then` are helpers for working with continuations of results.
+  It is not necessary for continuations to return results. use `return` and `then` for bare values, this is useful in request handlers where all return values are an http response.
 
-Gleam has great HTTP clients, there is [gleam_httpc](https://hexdocs.pm/gleam_httpc/) for the BEAM
-and [gleam_fetch](https://hexdocs.pm/gleam_fetch/) for JavaScript.
-
-### The problem
-
-The problem is function colouring. The two clients have different type signatures for their `send` function.
-httpc returns a `Result(Response, _)` and fetch returns a `Promise(Result(Response, _))`.
-
-This difference reflects underlying differences in the runtimes and I think is a good thing to capture this in the type system.
-However this difference blocks us from reusing `my_func` as it is.
-
-### The solution
-
-Instead of passing in the client, our code return data type with information on what to do next.
-In this example our code is either finished or needs to make an HTTP request.
-We call this returned type `Effect` and it has two variants `Fetch` and `Done`.
-
+No let's look at our runners. First on the BEAM.
 ```gleam
-pub type Effect(t) {
-  Fetch(Request, fn(Result(Response, String)) -> Effect(t))
-  Done(t)
-}
-```
+import gleam/httpc
 
-To write our business logic we make use of `use` to cleanly compose our effects.
-
-```gleam
-
-pub fn my_func() {
-  let request_a = request.new() |> request.set_path("/a")
-  use result_a <- Fetch(request_a)
-  let assert Ok(a) = result_a
-
-  let request_b = request.new() |> request.set_path("/a")
-  use result_b <- Fetch(request_b)
-  let assert Ok(b) = result_b
-  Done(todo as "something with a and b")
-}
-```
-
-The `my_func` above only describes the computation but does not run it.
-To run the function requires a `run` function, there are libraries for running tasks in different environments.
-
-Simple run functions can be implemented as follows:
-
-for BEAM
-```gleam
-pub fn run(effect) {
-  case effect {
-    Fetch(request, resume) -> run(resume(httpc.send(request)))
-    Done(value) -> value
+// mapping error reasons is a bit clunky.
+// maybe one day gleam_http will define a common error type.
+fn fetch(request) {
+  case httpc.send_bits(request) {
+    Ok(response) -> Ok(response)
+    Error(httpc.InvalidUtf8Response) ->
+      Error(effect.UnableToReadBody)
+    Error(httpc.FailedToConnect(ip4: ConnectError, ip6: ConnectError)) ->
+      Error(effect.NetworkError("failed to connect"))
+    Error(httpc.ResponseTimeout) ->
+      Error(effect.NetworkError("response timeout"))
   }
+  |> return
+}
+
+pub fn beam_run(task) {
+  task(Context(fetch:))(fn(x) { x })
 }
 ```
 
-for JS
+And on JS
+
 ```gleam
-pub fn run(effect) {
-  case effect {
-    Fetch(request, resume) -> {
-      use result <- promise.await(fetch.send(request))
-      run(resume(result))
+import gleam/fetch
+
+// mapping error reasons is a bit clunky.
+// maybe one day gleam_http will define a common error type.
+fn fetch(request) {
+  fn(then){
+    use response <- promise.await(fetch.send_bits(request))
+    case response {
+      Ok(response) -> {
+        use response <- promise.await(fetch.read_bytes_body(request))
+        then(response)
+      }
+      Error(reason) -> then(Error(reason))
     }
-    Done(value) -> promise.resolve(value)
   }
 }
-```
 
-**Note:** The full midas effect type defines many side effects so your runner will either have to implement them, panic or return a default value for the task.
-
-That's as far as we take this toy implementation, the rest of the documentation will cover using the actual library.
-
-## Usage
-
-Midas separates defining tasks from running tasks.
-So first we shall define a task that makes a web request and logs when it has completed.
-
-```gleam
-import midas/task as t
-
-pub fn task() {
-  let request = // ...
-  use response <- t.do(t.fetch(request))
-  use Nil <- t.do(t.log("Fetched"))
-  t.done(Nil)
-}
-```
-
-To run this in the browser use [midas_browser](https://github.com/midas-framework/midas_browser):
-
-```gleam
-import midas/browser
-
-pub fn main(){
-  use result <- promise.await(browser.run(task()))
-  case result {
-    Ok(_) -> // ...
-    Error(_) -> // ...
-  }
+pub fn js_run(task) {
+  task(Context(fetch:))(promise.resolve)
 }
 ```
 
 ## Testing
 
-Because we have isolated all side effects testing is easy.
-Instead of using any runner the simplest approach is to assert on each effect in turn.
-
-First assert that the effect is as expected, for example that the effect is `Fetch` and that the request has the right path.
-Then resume the program and assert on the next effect, or done if no more effects.
+We can define a runner that doesn't make and side effect, instead just returing the current state of the task.
+This is a defunctionalisation transformation.
+It makes testing effects consistent and removes the need for mocking.
 
 ```gleam
-import midas/effect as e
+pub type Effect(t) {
+  Fetch(Request(BitArray), fn(Result(Response(BitArray, FetchError))) -> Effect(t))
+  Pure(t)
+}
+
+pub fn run_test(task) {
+  let context = Context(fetch: fn(request) { Fetch(request, _) })
+
+  task(context)(Pure)
+}
 
 pub fn task_success_test() {
-  let assert e.Fetch(request:, resume:) = task()
-  assert request.path == "/a/b/c"
+  let assert Fetch(request:, resume:) = run_test(task)
+  assert request.path == "/a"
   
   let response = response.new(200)
-  let assert e.Log(message:, resume:) = resume(Ok(response))
-  assert messages == "Fetched"
+  let assert Fetch(request:,resume) = resume(Ok(response))
+  assert request.path == "/b"
   
-  let assert e.Done(Ok(value)) = resume(Ok(Nil))
+  let response = response.new(200)  
+  let assert Pure(Ok(value)) = resume(Ok(response))
 }
 
 pub fn network_error_test() {
-  let assert e.Fetch(request:, resume:) = task()
-  assert request.path == "/a/b/c"
+  let assert Fetch(request:, resume:) = task()
+  assert request.path == "/a"
 
-  let reason = e.NetworkError("something bad")
-  let assert e.Done(Error(reason)) = resume(Error(reason))
-  assert string.contains(snag.pretty_print(reason), "something bad")
+  let reason = NetworkError("something bad")
+  let assert Pure(Error(reason)) = resume(Error(reason))
+  assert "something bad" == reason
 }
 ```
-
-## Working with errors
-
-The `midas/task` module assumes that the return value of a task is a result.
-All the helper functions assume that an error from an effect, such as a network error from a fetch, should be returned as an error from the task.
-This is easier to work with and all effects are snags.
-However this prevents you from recovering or implementing retries.
-
-For more explicit error handling you can use the `midas/effect` module directly.
-
-## A note of effects
-
-The `midas/task` module defines an `Effect` type which represents all the effects that can be defined for any task.
-Gleam doesn't have an extensible type so the `Effect` type is essentially a single namespace defining all possible effects.
-
-This is not really a problem because any effect might return an error.
-So it is always possible to return an error that indicates that the effect is not implemented by a given runner.
-
