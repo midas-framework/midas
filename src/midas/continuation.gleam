@@ -16,6 +16,14 @@ pub fn return(value: a) -> Continuation(t, a) {
   fn(k: fn(a) -> t) -> t { k(value) }
 }
 
+/// Transform the value produced by a continuation.
+pub fn map(
+  cont: Continuation(t, a),
+  transform: fn(a) -> b,
+) -> Continuation(t, b) {
+  fn(k: fn(b) -> t) -> t { cont(fn(value: a) -> t { k(transform(value)) }) }
+}
+
 /// compose two a continuation with a new function that returns another continuation
 /// 
 /// This is monad bind.
